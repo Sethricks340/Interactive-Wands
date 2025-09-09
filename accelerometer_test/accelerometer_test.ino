@@ -1,6 +1,9 @@
+//Git Repo: C:\Users\sethr\OneDrive\Desktop\Interactive Wands
+
 #include <Wire.h>
 #include <Arduino.h>
 #include <math.h>
+#include <TimerOne.h>
 
 #define BLUE 3
 #define GREEN 5
@@ -28,11 +31,10 @@ const float dt = 0.01; // 100 Hz -> 10ms
 // Gyro biases
 float gyroBiasX = 0, gyroBiasY = 0, gyroBiasZ = 0;
 
-// Orientation
-// float pitch = 0, roll = 0, yaw = 0;
-
 // Complementary filter coefficient
 const float alpha = 0.98;
+
+volatile bool timerFlag = false;
 
 void writeRegister(uint8_t reg, uint8_t val) {
   Wire.beginTransmission(MPU_ADDR);
@@ -82,8 +84,15 @@ void setupMPU() {
   delay(50);
 }
 
+void timerIsr() {
+  timerFlag = true;               // just set a flag, keep ISR very short
+}
+
 void setup() {
   Serial.begin(115200);
+  Serial.begin(115200);        
+  Timer1.initialize(1000000);      // 0.5 second
+  Timer1.attachInterrupt(timerIsr);
   Wire.begin();
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
