@@ -34,7 +34,21 @@ float gyroBiasX = 0, gyroBiasY = 0, gyroBiasZ = 0;
 // Complementary filter coefficient
 const float alpha = 0.98;
 
-volatile bool timerFlag = false;
+volatile bool RCW = false;  // Roll Clockwise
+volatile bool RCCW = false; // Roll Counter-Clockwise
+volatile bool PF = false;   // Pitch Forward
+volatile bool PB = false;   // Pitch Back
+volatile bool YR = false;   // Yaw Right
+volatile bool YL = false;   // Yaw Left
+
+void clearFlags(){
+  RCW = false;  // Roll Clockwise
+  RCCW = false; // Roll Counter-Clockwise
+  PF = false;   // Pitch Forward
+  PB = false;   // Pitch Back
+  YR = false;   // Yaw Right
+  YL = false;   // Yaw Left
+}
 
 void writeRegister(uint8_t reg, uint8_t val) {
   Wire.beginTransmission(MPU_ADDR);
@@ -85,7 +99,7 @@ void setupMPU() {
 }
 
 void timerIsr() {
-  timerFlag = true;               // just set a flag, keep ISR very short
+  clearFlags();
 }
 
 void setup() {
@@ -134,43 +148,31 @@ void loop() {
   // Acceleration in 'Pitch'
   //Wand tip towards head
   if (gx >= 1000){
-    redValue = 255;
-    greenValue = 0;
-    blueValue = 0;
+    PB = true;
   }
   //Wand tip away from head
   else if (gx <= -1000){
-    redValue = 255;
-    greenValue = 127;
-    blueValue = 0;
+    PF = true;
   }
 
   // Acceleration in 'Roll'
   // Roll CW, looking down from hand
   if (gy >= 1000){
-    redValue = 255;
-    greenValue = 255;
-    blueValue = 255;
+    RCW = true;
   }
   //Roll CCW, looking down from hand
   else if (gy <= -1000){
-    redValue = 0;
-    greenValue = 255;
-    blueValue = 0;
+    RCCW = true;
   }
 
   // Acceleration in 'Yaw'
   // Flick to the left
   if (gz >= 1000){
-    redValue = 0;
-    greenValue = 0;
-    blueValue = 255;
+    YL = true;
   }
   else if (gz <= -1000){
   // Flick to the right
-    redValue = 148;
-    greenValue = 0;
-    blueValue = 211;
+    YR = true;
   }
 
   analogWrite(RED, redValue);
