@@ -224,7 +224,7 @@ void timerIsr() {
 void setup() {
   Serial.begin(115200);
 
-  Timer1.initialize(500000);      // 500000 microseconds = 0.5 second
+  Timer1.initialize(1000000);      // 1000000 microseconds = 1 second
   Timer1.attachInterrupt(timerIsr);
 
   Wire.begin();
@@ -265,7 +265,7 @@ void loop() {
   float gz = (toInt16(buf[12], buf[13]) - gyroBiasZ) / GYRO_LSB_PER_DPS;
 
   // sensible threshold (degrees per second)
-  const float gyroThreshold = 150.0; // tune this by testing
+  const float gyroThreshold = 1000.0; // tune this by testing
 
   // Pitch (gx)
   if (gx >= gyroThreshold) {
