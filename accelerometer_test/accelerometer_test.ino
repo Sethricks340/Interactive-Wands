@@ -39,11 +39,13 @@ volatile bool YL = false;   // Yaw Left
 
 // TODO: Are these valid?
 // Possible flags for wand
-volatile bool sheilded = false;  // Wand can't be affected by spells
+volatile bool shielded = false;  // Wand can't be affected by spells
 volatile bool disabled = false;  // Wand can't cast spells
 volatile bool listening = false; // If the button is pressed
 
 volatile unsigned long disableTime = 0; // Time wand is disabled for
+volatile unsigned long shieldTime = 0; // Time wand is shielded for
+volatile int lives = 3; // Total lives, 3 is max
 
 const int threshold = 800;
 
@@ -62,11 +64,11 @@ struct SpellResults {
     int green;
     int blue;
 
-    int self_sheild;
+    int self_shield;
     int self_disable;
     int self_life;
 
-    int others_sheild;
+    int others_shield;
     int others_disable;
     int others_life;
 };
@@ -81,7 +83,7 @@ Spell spells[] = {
     {"Incendio", 2, {"PF", "RCW"}, {255, 50, 0}, {25, 25, -1, 3, 0, -1}},
     {"Lumos", 1, {"PF"}, {255, 255, 255}, {0, 0, 0, 0, 0, 0}},
     {"Nox", 1, {"PB"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}},
-    {"Special_Spell", 2, {"PB", "PF"}, {0, 255, 0}, {0, 0, 0, 0, 0, 0}} //TODO: add special spells per wand
+    {"Character_Spell", 2, {"PB", "PF"}, {0, 255, 0}, {0, 0, 0, 0, 0, 0}} //TODO: add special spells per wand
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -152,7 +154,6 @@ void loop() {
     SpellResults spell = checkThroughSpells();
     if (spell.name != "None"){
       doSpell(spell);
-      Serial.println("Spell cast: wand disabled for " + String(disableTime / 1000000UL) + " seconds");
     }
     else{
       Serial.println("Spell not recognized");
@@ -263,7 +264,7 @@ SpellResults checkThroughSpells() {
     SpellResults result;
     result.name = "None"; // default
     result.red = result.green = result.blue = 0;
-    result.self_sheild = result.self_disable = result.self_life = result.others_sheild = result.others_disable = result.others_life = 0;
+    result.self_shield = result.self_disable = result.self_life = result.others_shield = result.others_disable = result.others_life = 0;
 
     for (int i = 0; i < NUM_SPELLS; i++) {
         if (listCount != spells[i].length) continue;
@@ -282,10 +283,10 @@ SpellResults checkThroughSpells() {
             result.green = spells[i].colors[1];
             result.blue = spells[i].colors[2];
 
-            result.self_sheild = spells[i].affects[0];
+            result.self_shield = spells[i].affects[0];
             result.self_disable = spells[i].affects[1];
             result.self_life = spells[i].affects[2];
-            result.others_sheild = spells[i].affects[3];
+            result.others_shield = spells[i].affects[3];
             result.others_disable = spells[i].affects[4];
             result.others_life = spells[i].affects[5];
 
@@ -297,12 +298,49 @@ SpellResults checkThroughSpells() {
 }
 
 void doSpell(SpellResults spell){
+  // Print spell name
   Serial.println(spell.name);
-  control_LED(spell.red, spell.green, spell.blue);
-  disableTime = (unsigned long)spell.self_disable * 1000000UL; // Covert seconds to micros
-  disabled = (spell.self_disable > 0);  // true only if there's a  nzero disable time
 
-  // spell.self_sheild = spell.self_disable = spell.self_life = spell.others_sheild = spell.others_disable = spell.others_life = 0;
+  // Control LED
+  control_LED(spell.red, spell.green, spell.blue);
+
+  // Handle self shield
+  shielded = (spell.self_shield > 0);
+  shieldTime = (unsigned long)spell.self_shield * 1000000UL; // Convert seconds to micros
+  if(shielded){
+    Serial.print("Self shielded for ");
+    Serial.print(shieldTime / 1000000UL);
+    Serial.println(" seconds");
+  } else {
+    Serial.println("Self not shielded");
+  }
+
+  // Handle self disable
+  disableTime = (unsigned long)spell.self_disable * 1000000UL; // Convert seconds to micros
+  disabled = (spell.self_disable > 0);
+  if (disabled){
+    Serial.print("Self disabled for ");
+    Serial.print(disableTime / 1000000UL);
+    Serial.println(" seconds");
+  } else {
+    Serial.println("Self not disabled");
+  }
+
+  // Update lives with clamping
+  lives += spell.self_life;
+  if (lives < 0) lives = 0;
+  if (lives > 3) lives = 3;
+  Serial.print("Lives: ");
+  Serial.println(lives);
+
+  Serial.print("others_shield: ");
+  Serial.println(spell.others_shield);
+  Serial.print("others_disable: ");
+  Serial.println(spell.others_disable);
+  Serial.print("others_life: ");
+  Serial.println(spell.others_life);
+  Serial.println(" ");
+    // result.self_shield = result.self_disable = result.self_life = result.others_shield = result.others_disable = result.others_life = 0;
 }
 
 void writeRegister(uint8_t reg, uint8_t val) {
