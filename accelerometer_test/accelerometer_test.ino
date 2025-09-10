@@ -79,25 +79,25 @@ struct SpellResults {
 };
 
 Spell spells[] = {
-  {"Expelliarmus", 2, {"YL", "PF"}, {255, 36, 0}, {0, 3, 0, 3, 7, 0}, "None"},
-  {"Protego", 2, {"YR", "PB"}, {255, 127, 0}, {13, 3, 0, 3, 0, 0}, "None"},
-  {"Wingardium_leviosa", 2, {"YR", "PF"}, {180, 30, 180}, {0, 10, 1, 3, 0, -1}, "None"},
-  {"Patrificus_totalus", 2, {"RCW", "RCCW"}, {255, 0, 255}, {0, 5, 0, 3, 0, -1}, "None"},
-  {"Protego_maxima", 2, {"RCCW", "PB"}, {0, 0, 255}, {10, 10, 0, 10, 0, 0}, "None"},
-  {"Sectumsempra", 2, {"PF", "PB"}, {255, 0, 0}, {0, 3, -1, 3, 0, -1}, "None"},
-  {"Incendio", 2, {"PF", "RCW"}, {255, 50, 0}, {15, 15, -1, 3, 0, -1}, "None"},
+  {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},    {0, 3, 0, 3, 7, 0},     "None"},    // Red
+  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},   {0, 3, -1, 3, 0, -1},   "None"},    // Redish-orange
+  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},  {13, 3, 0, 3, 0, 0},    "None"},    // Yellow
+  {"Protego_maxima",     2, {"RCCW", "PB"},  {0, 0, 255},    {10, 10, 0, 10, 0, 0},  "None"},    // Blue
+  {"Wingardium_leviosa", 2, {"YR", "PF"},    {180, 30, 180}, {0, 10, 1, 3, 0, -1},   "None"},    // Darker Pink
+  {"Patrificus_totalus", 2, {"RCW", "RCCW"}, {180, 30, 100}, {0, 5, 0, 3, 0, -1},    "None"},    // Lighter Pink
+  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},   {15, 15, -1, 3, 0, -1}, "None"},    // Teal
   // {"Lumos", 1, {"PF"}, {255, 255, 255}, {0, 0, 0, 0, 0, 0}, "None"}, //TODO: Maybe re-add this later for testing
   // {"Nox", 1, {"PB"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "None"}
 };
 
 Spell characterSpells[] = {
-  {"Episky", 2, {"PB", "PF"}, {0, 255, 0}, {10, 3, 1, 0, 0, 1}, "Luna"},
-  {"Eat_slugs", 2, {"PB", "PF"}, {0, 255, 0}, {0, 3, -1, 3, 10, -1}, "Ron"},
-  {"Congelare_lacare", 2, {"PB", "PF"}, {0, 255, 0}, {5, 0, -1, 3, 0, -1}, "Molly"},
-  {"marauders_map", 2, {"PB", "PF"}, {0, 255, 0}, {30, 10, 1, 0, 0, 0}, "Fred"},
-  {"Alohamora", 2, {"PB", "PF"}, {0, 255, 0}, {0, 3, 1, -1, 0, 0}, "Hermione"},
-  {"Advada_kedavera", 2, {"PB", "PF"}, {0, 255, 0}, {0, 3, -2, 3, 0, -3}, "Voldemort"},
-  {"Invisibility_cloak", 2, {"PB", "PF"}, {0, 255, 0}, {30, 10, 1, 0, 0, 0}, "Harry"}
+  {"Congelare_lacare",   2, {"PB", "PF"}, {102, 153, 0},   {5, 0, -1, 3, 0, -1},  "Molly"},      // Yellow-green1
+  {"marauders_map",      2, {"PB", "PF"}, {51, 204, 0},    {30, 10, 1, 0, 0, 0},  "Fred"},       // Yellow-green2
+  {"Alohamora",          2, {"PB", "PF"}, {15, 255, 15},   {0, 3, 1, -1, 0, 0},   "Hermione"},   // Coral green
+  {"Advada_kedavera",    2, {"PB", "PF"}, {0, 255, 0},     {0, 3, -2, 3, 0, -3},  "Voldemort"},  // Green
+  {"Eat_slugs",          2, {"PB", "PF"}, {45, 255, 45},   {0, 3, -1, 3, 10, -1}, "Ron"},        // Greenish-blue
+  {"Episky",             2, {"PB", "PF"}, {0, 255, 147},   {10, 3, 1, 0, 0, 1},   "Luna"},       // Sky blue
+  {"Invisibility_cloak", 2, {"PB", "PF"}, {255, 255, 255}, {30, 10, 1, 0, 0, 0},  "Harry"},      // White
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -107,18 +107,22 @@ const int MAX_SIZE = 4;
 String spellChecker[MAX_SIZE]; 
 volatile int listCount = 0;    
 
-// const String self_name = "Luna";
-// const String self_name = "Ron";
-// const String self_name = "Molly";
+const String self_name = "Molly";
 // const String self_name = "Fred";
+// const String self_name = "Harry";
 // const String self_name = "Hermione";
 // const String self_name = "Voldemort";
-const String self_name = "Harry";
+// const String self_name = "Ron";
+// const String self_name = "Luna";
 Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
 
 volatile String last_spell = "";
 
 int motorPin = 11;
+
+int redValue = 0;
+int greenValue = 0;
+int blueValue = 0;
 
 void setup() {
   Serial.begin(115200);        
@@ -143,6 +147,61 @@ void setup() {
 }
 
 void loop() {
+
+  // control_LED(255, 0, 0);
+  // delay(1000);
+  // control_LED(255, 36, 0);
+  // delay(1000);
+  // control_LED(255, 127, 0);
+  // delay(1000);
+  // control_LED(0, 0, 255);
+  // delay(1000);
+  // control_LED(180, 30, 180);
+  // delay(1000);
+  // control_LED(180, 30, 100);
+  // delay(1000);
+  // control_LED(0, 100, 34);
+  // delay(1000);
+
+  // control_LED(102, 153, 0);
+  // delay(1000);
+  // control_LED(51, 204, 0);
+  // delay(1000);
+  // control_LED(15, 255, 15);
+  // delay(1000);
+  // control_LED(0, 255, 0);
+  // delay(1000);
+  // control_LED(45, 255, 45);
+  // delay(1000);
+  // control_LED(0, 255, 147);
+  // delay(1000);
+  // control_LED(255, 255, 255);
+  // delay(1000);
+  // control_LED(0, 0, 0);
+  // delay(1000);
+  // return;
+
+  // if (Serial.available()) {
+  //   char c = Serial.read();
+
+  //   // Adjust values based on key pressed
+  //   if (c == 'r') redValue = min(redValue + 1, 255);
+  //   if (c == 'f') redValue = max(redValue - 1, 0);
+
+  //   if (c == 'g') greenValue = min(greenValue + 1, 255);
+  //   if (c == 'h') greenValue = max(greenValue - 1, 0);
+
+  //   if (c == 'b') blueValue = min(blueValue + 1, 255);
+  //   if (c == 'n') blueValue = max(blueValue - 1, 0);
+
+  //   // Show values and update LED
+  //   Serial.print("R:"); Serial.print(redValue);
+  //   Serial.print(" G:"); Serial.print(greenValue);
+  //   Serial.print(" B:"); Serial.println(blueValue);
+
+  //   control_LED(redValue, greenValue, blueValue);
+  // }
+
   // If not enough time has passed (less than dt), skip this iteration
   static unsigned long lastTime = micros();
   unsigned long now = micros();
