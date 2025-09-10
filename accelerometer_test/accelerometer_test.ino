@@ -5,6 +5,10 @@
 // * Press button, do spell, release button
 // * Works best with a small pause inbetween each movement
 
+//TODO: Add shielding logic
+//TODO: Add countdown prints to shield and disable
+//TODO: Add dummy ISR
+
 #include <Wire.h>
 #include <Arduino.h>
 #include <math.h>
@@ -51,15 +55,16 @@ const int threshold = 800;
 
 // Spell definitions
 struct Spell {
-    String name;
+    const char* name;
     int length;       // number of movements
-    String moves[4];  // max movements per spell
+    const char* moves[4];  // max movements per spell
     int colors[3];
     int affects[6];
+    String wizard_name;
 };
 
 struct SpellResults {
-    String name;
+    const char* name;
     int red;
     int green;
     int blue;
@@ -74,23 +79,46 @@ struct SpellResults {
 };
 
 Spell spells[] = {
-    {"Expelliarmus", 2, {"YL", "PF"}, {255, 36, 0}, {0, 3, 0, 3, 7, 0}},
-    {"Protego", 2, {"YR", "PB"}, {255, 127, 0}, {13, 3, 0, 3, 0, 0}},
-    {"Wingardium_leviosa", 2, {"YR", "PF"}, {180, 30, 180}, {0, 10, 1, 3, 0, -1}},
-    {"Patrificus_totalus", 2, {"RCW", "RCCW"}, {255, 0, 255}, {0, 5, 0, 3, 0, -1}},
-    {"Protego_maxima", 2, {"RCCW", "PB"}, {0, 0, 255}, {10, 10, 0, 10, 0, 0}},
-    {"Sectumsempra", 2, {"PF", "PB"}, {255, 0, 0}, {0, 3, -1, 3, 0, -1}},
-    {"Incendio", 2, {"PF", "RCW"}, {255, 50, 0}, {25, 25, -1, 3, 0, -1}},
-    {"Lumos", 1, {"PF"}, {255, 255, 255}, {0, 0, 0, 0, 0, 0}},
-    {"Nox", 1, {"PB"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}},
-    {"Character_Spell", 2, {"PB", "PF"}, {0, 255, 0}, {0, 0, 0, 0, 0, 0}} //TODO: add special spells per wand
+  {"Expelliarmus", 2, {"YL", "PF"}, {255, 36, 0}, {0, 3, 0, 3, 7, 0}, "None"},
+  {"Protego", 2, {"YR", "PB"}, {255, 127, 0}, {13, 3, 0, 3, 0, 0}, "None"},
+  {"Wingardium_leviosa", 2, {"YR", "PF"}, {180, 30, 180}, {0, 10, 1, 3, 0, -1}, "None"},
+  {"Patrificus_totalus", 2, {"RCW", "RCCW"}, {255, 0, 255}, {0, 5, 0, 3, 0, -1}, "None"},
+  {"Protego_maxima", 2, {"RCCW", "PB"}, {0, 0, 255}, {10, 10, 0, 10, 0, 0}, "None"},
+  {"Sectumsempra", 2, {"PF", "PB"}, {255, 0, 0}, {0, 3, -1, 3, 0, -1}, "None"},
+  {"Incendio", 2, {"PF", "RCW"}, {255, 50, 0}, {15, 15, -1, 3, 0, -1}, "None"},
+  // {"Lumos", 1, {"PF"}, {255, 255, 255}, {0, 0, 0, 0, 0, 0}, "None"}, //TODO: Maybe re-add this later for testing
+  // {"Nox", 1, {"PB"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "None"}
+};
+
+Spell characterSpells[] = {
+  {"Episky", 2, {"PB", "PF"}, {0, 255, 0}, {10, 3, 1, 0, 0, 1}, "Luna"},
+  {"Eat_slugs", 2, {"PB", "PF"}, {0, 255, 0}, {0, 3, -1, 3, 10, -1}, "Ron"},
+  {"Congelare_lacare", 2, {"PB", "PF"}, {0, 255, 0}, {5, 0, -1, 3, 0, -1}, "Molly"},
+  {"marauders_map", 2, {"PB", "PF"}, {0, 255, 0}, {30, 10, 1, 0, 0, 0}, "Fred"},
+  {"Alohamora", 2, {"PB", "PF"}, {0, 255, 0}, {0, 3, 1, -1, 0, 0}, "Hermione"},
+  {"Advada_kedavera", 2, {"PB", "PF"}, {0, 255, 0}, {0, 3, -2, 3, 0, -3}, "Voldemort"},
+  {"Invisibility_cloak", 2, {"PB", "PF"}, {0, 255, 0}, {30, 10, 1, 0, 0, 0}, "Harry"}
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
+const int NUM_CHARACTER_SPELLS = sizeof(characterSpells) / sizeof(characterSpells[0]);
 
 const int MAX_SIZE = 4; 
 String spellChecker[MAX_SIZE]; 
-volatile int listCount = 0;       
+volatile int listCount = 0;    
+
+// const String self_name = "Luna";
+// const String self_name = "Ron";
+// const String self_name = "Molly";
+// const String self_name = "Fred";
+// const String self_name = "Hermione";
+// const String self_name = "Voldemort";
+const String self_name = "Harry";
+Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
+
+volatile String last_spell = "";
+
+int motorPin = 11;
 
 void setup() {
   Serial.begin(115200);        
@@ -102,36 +130,19 @@ void setup() {
   digitalWrite(GREEN, LOW);
   digitalWrite(BLUE, LOW);
   pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(motorPin, OUTPUT);
+  digitalWrite(motorPin, LOW);
   delay(100);
 
   control_LED(0, 0, 0); // LED off
   
   setupMPU();
-  Serial.println("READY");
+  getCharacterSpell();
+  Serial.print(characterSpell.wizard_name);
+  Serial.println(": READY");
 }
 
 void loop() {
-
-  if (Serial.available() > 0){
-    String message = Serial.readStringUntil('\n');  // read from Pi
-
-    if (message == "colors"){
-      Serial.println("Enter redValue:");
-      while (!Serial.available());
-      int redValue = Serial.parseInt();
-      
-      Serial.println("Enter greenValue:");
-      while (!Serial.available());
-      int greenValue = Serial.parseInt();
-      
-      Serial.println("Enter blueValue:");
-      while (!Serial.available());
-      int blueValue = Serial.parseInt();
-
-      control_LED(redValue, greenValue, blueValue); // LED off
-    }
-  }
-
   // If not enough time has passed (less than dt), skip this iteration
   static unsigned long lastTime = micros();
   unsigned long now = micros();
@@ -143,8 +154,9 @@ void loop() {
   // Check global bools for filtering data sampling  
   if ((now - lastTime) >= disableTime && disabled){
     Serial.println("Wand re-enabeled");
-    disabled = false;
     control_LED(0, 0, 0); // LED off
+    buzzVibrator(250, 2);
+    disabled = false;
   }
   if (disabled){
     // Serial.println("Disabled is true, returning...");
@@ -243,6 +255,31 @@ void loop() {
   }
 }
 
+void getCharacterSpell(){
+  for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
+    if (self_name == characterSpells[i].wizard_name){
+      characterSpell.name = characterSpells[i].name;
+      characterSpell.length = characterSpells[i].length;
+      for(int j = 0; j < 4; j++) characterSpell.moves[j] = characterSpells[i].moves[j];
+      for(int j = 0; j < 3; j++) characterSpell.colors[j] = characterSpells[i].colors[j];
+      for(int j = 0; j < 6; j++) characterSpell.affects[j] = characterSpells[i].affects[j];
+      characterSpell.wizard_name = characterSpells[i].wizard_name;
+    }
+  }
+}
+
+void buzzVibrator(int duration, int times){
+  for (int i = 0; i < times; i++) {
+    // Turn motor ON
+    digitalWrite(motorPin, HIGH);
+    delay(duration);  // keep on for 1 second
+
+    // Turn motor OFF
+    digitalWrite(motorPin, LOW);
+    delay(duration);  // keep off for 1 second
+  }
+}
+
 void clearSpellChecker(){
   listCount = 0;       
 }
@@ -261,48 +298,74 @@ void printSpellChecker() {
 }
 
 SpellResults checkThroughSpells() {
-    SpellResults result;
-    result.name = "None"; // default
-    result.red = result.green = result.blue = 0;
-    result.self_shield = result.self_disable = result.self_life = result.others_shield = result.others_disable = result.others_life = 0;
+  SpellResults result;
+  result.name = "None"; // default
+  result.red = result.green = result.blue = 0;
+  result.self_shield = result.self_disable = result.self_life =
+  result.others_shield = result.others_disable = result.others_life = 0;
 
-    for (int i = 0; i < NUM_SPELLS; i++) {
-        if (listCount != spells[i].length) continue;
+  // --- check normal spells ---
+  for (int i = 0; i < NUM_SPELLS; i++) {
+    if (listCount != spells[i].length) continue;
 
-        bool equals = true;
-        for (int j = 0; j < spells[i].length; j++) {
-            if (spellChecker[j] != spells[i].moves[j]) {
-                equals = false;
-                break;
-            }
-        }
-
-        if (equals) {
-            result.name = spells[i].name;
-            result.red = spells[i].colors[0];
-            result.green = spells[i].colors[1];
-            result.blue = spells[i].colors[2];
-
-            result.self_shield = spells[i].affects[0];
-            result.self_disable = spells[i].affects[1];
-            result.self_life = spells[i].affects[2];
-            result.others_shield = spells[i].affects[3];
-            result.others_disable = spells[i].affects[4];
-            result.others_life = spells[i].affects[5];
-
-            return result;
-        }
+    bool equals = true;
+    for (int j = 0; j < spells[i].length; j++) {
+      if (spellChecker[j] != spells[i].moves[j]) {
+        equals = false;
+        break;
+      }
     }
 
+    if (equals) {
+      result.name = spells[i].name;
+      result.red   = spells[i].colors[0];
+      result.green = spells[i].colors[1];
+      result.blue  = spells[i].colors[2];
+
+      result.self_shield   = spells[i].affects[0];
+      result.self_disable  = spells[i].affects[1];
+      result.self_life     = spells[i].affects[2];
+      result.others_shield = spells[i].affects[3];
+      result.others_disable= spells[i].affects[4];
+      result.others_life   = spells[i].affects[5];
+
+      return result;
+    }
+}
+  // --- check character spell explicitly ---
+  // (example: 2 moves PB and PF)
+  if (listCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
+    result.name = characterSpell.name;
+    result.red   = characterSpell.colors[0];
+    result.green = characterSpell.colors[1];
+    result.blue  = characterSpell.colors[2];
+
+    result.self_shield   = characterSpell.affects[0];
+    result.self_disable  = characterSpell.affects[1];
+    result.self_life     = characterSpell.affects[2];
+    result.others_shield = characterSpell.affects[3];
+    result.others_disable= characterSpell.affects[4];
+    result.others_life   = characterSpell.affects[5];
+
     return result;
+  }
+  return result; // default "None"
 }
 
 void doSpell(SpellResults spell){
+  if (last_spell == spell.name){
+    Serial.println("Can't do same spell twice in a row.");
+    return;
+  }
+
   // Print spell name
   Serial.println(spell.name);
+  last_spell = spell.name;
 
   // Control LED
   control_LED(spell.red, spell.green, spell.blue);
+
+  buzzVibrator(250, 2);
 
   // Handle self shield
   shielded = (spell.self_shield > 0);
@@ -329,7 +392,7 @@ void doSpell(SpellResults spell){
   // Update lives with clamping
   lives += spell.self_life;
   if (lives < 0) lives = 0;
-  if (lives > 3) lives = 3;
+  if (lives > 5) lives = 5;
   Serial.print("Lives: ");
   Serial.println(lives);
 
