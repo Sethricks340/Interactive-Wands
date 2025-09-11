@@ -86,8 +86,6 @@ Spell spells[] = {
   {"Wingardium_leviosa", 2, {"YR", "PF"},    {180, 30, 180}, {0, 10, 1, 3, 0, -1},   "None"},    // Darker Pink
   {"Patrificus_totalus", 2, {"RCW", "RCCW"}, {180, 30, 100}, {0, 5, 0, 3, 0, -1},    "None"},    // Lighter Pink
   {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},   {15, 15, -1, 3, 0, -1}, "None"},    // Teal
-  // {"Lumos", 1, {"PF"}, {255, 255, 255}, {0, 0, 0, 0, 0, 0}, "None"}, //TODO: Maybe re-add this later for testing
-  // {"Nox", 1, {"PB"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "None"}
 };
 
 Spell characterSpells[] = {
@@ -109,20 +107,16 @@ volatile int listCount = 0;
 
 const String self_name = "Molly";
 // const String self_name = "Fred";
-// const String self_name = "Harry";
 // const String self_name = "Hermione";
 // const String self_name = "Voldemort";
 // const String self_name = "Ron";
 // const String self_name = "Luna";
+// const String self_name = "Harry";
 Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
 
 volatile String last_spell = "";
 
 int motorPin = 11;
-
-int redValue = 0;
-int greenValue = 0;
-int blueValue = 0;
 
 void setup() {
   Serial.begin(115200);        
@@ -147,60 +141,6 @@ void setup() {
 }
 
 void loop() {
-
-  // control_LED(255, 0, 0);
-  // delay(1000);
-  // control_LED(255, 36, 0);
-  // delay(1000);
-  // control_LED(255, 127, 0);
-  // delay(1000);
-  // control_LED(0, 0, 255);
-  // delay(1000);
-  // control_LED(180, 30, 180);
-  // delay(1000);
-  // control_LED(180, 30, 100);
-  // delay(1000);
-  // control_LED(0, 100, 34);
-  // delay(1000);
-
-  // control_LED(102, 153, 0);
-  // delay(1000);
-  // control_LED(51, 204, 0);
-  // delay(1000);
-  // control_LED(15, 255, 15);
-  // delay(1000);
-  // control_LED(0, 255, 0);
-  // delay(1000);
-  // control_LED(45, 255, 45);
-  // delay(1000);
-  // control_LED(0, 255, 147);
-  // delay(1000);
-  // control_LED(255, 255, 255);
-  // delay(1000);
-  // control_LED(0, 0, 0);
-  // delay(1000);
-  // return;
-
-  // if (Serial.available()) {
-  //   char c = Serial.read();
-
-  //   // Adjust values based on key pressed
-  //   if (c == 'r') redValue = min(redValue + 1, 255);
-  //   if (c == 'f') redValue = max(redValue - 1, 0);
-
-  //   if (c == 'g') greenValue = min(greenValue + 1, 255);
-  //   if (c == 'h') greenValue = max(greenValue - 1, 0);
-
-  //   if (c == 'b') blueValue = min(blueValue + 1, 255);
-  //   if (c == 'n') blueValue = max(blueValue - 1, 0);
-
-  //   // Show values and update LED
-  //   Serial.print("R:"); Serial.print(redValue);
-  //   Serial.print(" G:"); Serial.print(greenValue);
-  //   Serial.print(" B:"); Serial.println(blueValue);
-
-  //   control_LED(redValue, greenValue, blueValue);
-  // }
 
   // If not enough time has passed (less than dt), skip this iteration
   static unsigned long lastTime = micros();
