@@ -16,7 +16,7 @@ float dx[NUM_BALLS] = {2.5, 2.0, 1.5, 1.2, 1.0, 0.8};
 float dy[NUM_BALLS] = {2.0, 2.5, 1.2, 1.0, 0.8, 0.6};
 
 // Radii
-int r[NUM_BALLS]  = { 5, 8, 12, 15, 18, 20};
+int r[NUM_BALLS]  = {5, 8, 12, 15, 18, 20};
 
 // Colors
 uint16_t c[NUM_BALLS] = {
