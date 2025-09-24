@@ -113,6 +113,15 @@ void loop() {
   for (int i = 0; i < NUM_BALLS; i++) {
     sprite.fillCircle((int)x[i], (int)y[i], r[i], c[i]);
   }
+
+  // After drawing all the balls:
+  sprite.setTextSize(3); // 1 = default, 2 = double size, 3 = triple, etc.
+  sprite.setTextColor(TFT_WHITE); // foreground, background
+  sprite.setTextDatum(MC_DATUM);             // center text anchor
+
+  // Draw one text in the middle of the screen (x=120, y=67 for 240x135)
+  sprite.drawString("Loading...", 120, 67);
+
   sprite.pushSprite(0, 0);
 
   delay(10); // Adjust speed
