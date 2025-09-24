@@ -16,9 +16,9 @@
 const int buttonPin = 2; // the pin your button is connected to
 int buttonState = 0;
 
-#define BLUE 3
+#define RED 3
 #define GREEN 5
-#define RED 6
+#define BLUE 6
 
 // MPU6500 I2C address
 #define MPU_ADDR 0x68
@@ -79,23 +79,23 @@ struct SpellResults {
 };
 
 Spell spells[] = {
-  {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},    {0, 3, 0, 3, 7, 0},     "None"},    // Red
-  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},   {0, 3, -1, 3, 0, -1},   "None"},    // Redish-orange
-  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},  {13, 3, 0, 3, 0, 0},    "None"},    // Yellow
-  {"Protego_maxima",     2, {"RCCW", "PB"},  {0, 0, 255},    {10, 10, 0, 10, 0, 0},  "None"},    // Blue
-  {"Wingardium_leviosa", 2, {"YR", "PF"},    {180, 30, 180}, {0, 10, 1, 3, 0, -1},   "None"},    // Darker Pink
-  {"Patrificus_totalus", 2, {"RCW", "RCCW"}, {180, 30, 100}, {0, 5, 0, 3, 0, -1},    "None"},    // Lighter Pink
-  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},   {15, 15, -1, 3, 0, -1}, "None"},    // Teal
+  {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
+  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -1, 3, 0, -1},   "None"},       // Redish-orange
+  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 0, 3, 0, 0},    "None"},       // Yellow
+  {"Protego_maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 0, 10, 0, 0},  "None"},       // Blue
+  {"Wingardium_leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 1, 3, 0, -1},   "None"},       // Darker Pink
+  {"Patrificus_totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -1},    "None"},       // Lighter Pink
+  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 15, -1, 3, 0, -1}, "None"},       // Teal
 };
 
 Spell characterSpells[] = {
-  {"Congelare_lacare",   2, {"PB", "PF"}, {102, 153, 0},   {5, 0, -1, 3, 0, -1},  "Molly"},      // Yellow-green1
-  {"marauders_map",      2, {"PB", "PF"}, {51, 204, 0},    {30, 10, 1, 0, 0, 0},  "Fred"},       // Yellow-green2
-  {"Alohamora",          2, {"PB", "PF"}, {15, 255, 15},   {0, 3, 1, -1, 0, 0},   "Hermione"},   // Coral green
-  {"Advada_kedavera",    2, {"PB", "PF"}, {0, 255, 0},     {0, 3, -2, 3, 0, -3},  "Voldemort"},  // Green
-  {"Eat_slugs",          2, {"PB", "PF"}, {45, 255, 45},   {0, 3, -1, 3, 10, -1}, "Ron"},        // Greenish-blue
-  {"Episky",             2, {"PB", "PF"}, {0, 255, 147},   {10, 3, 1, 0, 0, 1},   "Luna"},       // Sky blue
-  {"Invisibility_cloak", 2, {"PB", "PF"}, {255, 255, 255}, {30, 10, 1, 0, 0, 0},  "Harry"},      // White
+  {"Congelare_lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly"},      // Yellow-green1
+  {"Marauders_map",      2, {"PB", "PF"},    {51, 204, 0},    {30, 10, 1, 0, 0, 0},   "Fred"},       // Yellow-green2
+  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione"},   // Coral green
+  {"Advada_kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -3},   "Voldemort"},  // Green
+  {"Eat_slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron"},        // Greenish-blue
+  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 1, 0, 0, 1},    "Luna"},       // Sky blue
+  {"Invisibility_cloak", 2, {"PB", "PF"},    {255, 255, 255}, {30, 10, 1, 0, 0, 0},   "Harry"},      // White
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
