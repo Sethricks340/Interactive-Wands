@@ -14,16 +14,16 @@ void setup() {
 
   // Create heart sprite
   TFT_eSprite heart = TFT_eSprite(&tft);
-  heart.createSprite(32, 32);      // size of the sprite
+  heart.createSprite(16, 16);      // size of the sprite
   heart.fillSprite(TFT_BLACK);     // clear to black
 
   uint16_t heartColor = TFT_RED;
-  heart.fillCircle(10, 10, 6, heartColor);     // top-left lobe
-  heart.fillCircle(22, 10, 6, heartColor);     // top-right lobe
-  heart.fillTriangle(4, 10, 28, 10, 16, 28, heartColor);  // bottom triangle
+  heart.fillCircle(5, 5, 3, heartColor);     // top-left lobe
+  heart.fillCircle(11, 5, 3, heartColor);     // top-right lobe
+  heart.fillTriangle(2, 5, 14, 5, 8, 11, heartColor);  // bottom triangle
 
-  int heartWidth = 32;
-  int heartHeight = 32;
+  int heartWidth = 16;
+  int heartHeight = 16;
   int bottomY = tft.height() - heartHeight;
 
   for (int i = 0; i < 5; i++) {
