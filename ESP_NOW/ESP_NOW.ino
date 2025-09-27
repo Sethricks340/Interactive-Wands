@@ -10,8 +10,13 @@
 //TODO: Add dummy ISR
 
 #include <Wire.h>
-#include <Arduino.h>
+// #include <Arduino.h>
 #include <math.h>
+#include <TFT_eSPI.h>
+#include <SPI.h>
+
+TFT_eSPI tft = TFT_eSPI();
+TFT_eSprite sprite = TFT_eSprite(&tft);  // Create a sprite buffer
 
 const int buttonPin = 33; // the pin your button is connected to
 int buttonState = 0;
@@ -119,6 +124,16 @@ String last_spell = "";
 int motorPin = 14;
 
 void setup() {
+
+  tft.init();
+  tft.setRotation(1);
+  tft.fillScreen(TFT_BLACK);
+
+  pinMode(32, OUTPUT);
+  digitalWrite(32, HIGH);  // Backlight on
+
+  sprite.createSprite(tft.width(), tft.height());
+
   Serial.begin(115200);        
   Wire.begin();
   pinMode(RED, OUTPUT);
@@ -138,22 +153,11 @@ void setup() {
   getCharacterSpell();
   Serial.print(characterSpell.wizard_name);
   Serial.println(": READY");
+
+  LCD_print_basic("READY");
 }
 
 void loop() {
-
-  //TODO: remove debugging logic
-  // if (!digitalRead(buttonPin)){
-  //   control_LED(0, 255, 0); // Green
-
-  // }
-  // else{
-  //   control_LED(0, 0, 0); // LED off
-  // }
-  // return;
-
-
-
   // If not enough time has passed (less than dt), skip this iteration
   static unsigned long lastTime = micros();
   unsigned long now = micros();
@@ -180,6 +184,7 @@ void loop() {
     }
     else{
       Serial.println("Spell not recognized");
+      LCD_print_basic("Spell not recognized");
     }
     clearSpellChecker();
   }
@@ -363,14 +368,43 @@ SpellResults checkThroughSpells() {
   return result; // default "None"
 }
 
+void LCD_print_basic(String text){
+  // Clear previous text
+  text.replace("_", " ");
+
+  bool capitalizeNext = true;
+  for (int i = 0; i < text.length(); i++) {
+    if (text[i] == ' ') {
+      capitalizeNext = true;       // next character after space gets capitalized
+    } else if (capitalizeNext) {
+      text.setCharAt(i, toupper(text[i])); // uppercase first letter
+      capitalizeNext = false;
+    }
+  }
+
+  sprite.fillRect(0, 0, tft.width(), tft.height(), TFT_BLACK);
+
+  // Print received data on TFT sprite
+  sprite.setTextSize(2);
+  sprite.setTextColor(TFT_WHITE);
+  sprite.setCursor(0, 0);
+
+  sprite.print(text);
+
+  sprite.pushSprite(0, 0); // Push to the screen
+}
+
+
 void doSpell(SpellResults spell){
   if (last_spell == spell.name){
     Serial.println("Can't do same spell twice in a row.");
+    LCD_print_basic("Can't do same spell twice in a row.");
     return;
   }
 
   // Print spell name
   Serial.println(spell.name);
+  LCD_print_basic(spell.name);
   last_spell = spell.name;
 
   // Control LED
