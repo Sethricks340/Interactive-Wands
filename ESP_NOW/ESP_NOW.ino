@@ -84,23 +84,24 @@ struct SpellResults {
 };
 
 Spell spells[] = {
+// Spell name, length of moves, moves, RGB, self-shield, self-disable, self-life, others-shield, others-disable, others-life, spell owner
   {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
   {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -1, 3, 0, -1},   "None"},       // Redish-orange
   {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 0, 3, 0, 0},    "None"},       // Yellow
-  {"Protego_maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 0, 10, 0, 0},  "None"},       // Blue
-  {"Wingardium_leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 1, 3, 0, -1},   "None"},       // Darker Pink
-  {"Patrificus_totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -1},    "None"},       // Lighter Pink
+  {"Protego Maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 0, 10, 0, 0},  "None"},       // Blue
+  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 1, 3, 0, -1},   "None"},       // Darker Pink
+  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -1},    "None"},       // Lighter Pink
   {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 15, -1, 3, 0, -1}, "None"},       // Teal
 };
 
 Spell characterSpells[] = {
-  {"Congelare_lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly"},      // Yellow-green1
-  {"Marauders_map",      2, {"PB", "PF"},    {51, 204, 0},    {30, 10, 1, 0, 0, 0},   "Fred"},       // Yellow-green2
+  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly"},      // Yellow-green1
+  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {30, 10, 1, 0, 0, 0},   "Fred"},       // Yellow-green2
   {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione"},   // Coral green
-  {"Advada_kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -3},   "Voldemort"},  // Green
-  {"Eat_slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron"},        // Greenish-blue
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -3},   "Voldemort"},  // Green
+  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron"},        // Greenish-blue
   {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 1, 0, 0, 1},    "Luna"},       // Sky blue
-  {"Invisibility_cloak", 2, {"PB", "PF"},    {255, 255, 255}, {30, 10, 1, 0, 0, 0},   "Harry"},      // White
+  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {30, 10, 1, 0, 0, 0},   "Harry"},      // White
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -154,7 +155,7 @@ void setup() {
   Serial.print(characterSpell.wizard_name);
   Serial.println(": READY");
 
-  LCD_print_basic("READY");
+  // LCD_print_basic("READY");
 }
 
 void loop() {
@@ -184,7 +185,7 @@ void loop() {
     }
     else{
       Serial.println("Spell not recognized");
-      LCD_print_basic("Spell not recognized");
+      // LCD_print_basic("Spell not recognized");
     }
     clearSpellChecker();
   }
@@ -368,43 +369,43 @@ SpellResults checkThroughSpells() {
   return result; // default "None"
 }
 
-void LCD_print_basic(String text){
-  // Clear previous text
-  text.replace("_", " ");
+// void LCD_print_basic(String text){
+//   // Clear previous text
+//   text.replace("_", " ");
 
-  bool capitalizeNext = true;
-  for (int i = 0; i < text.length(); i++) {
-    if (text[i] == ' ') {
-      capitalizeNext = true;       // next character after space gets capitalized
-    } else if (capitalizeNext) {
-      text.setCharAt(i, toupper(text[i])); // uppercase first letter
-      capitalizeNext = false;
-    }
-  }
+//   bool capitalizeNext = true;
+//   for (int i = 0; i < text.length(); i++) {
+//     if (text[i] == ' ') {
+//       capitalizeNext = true;       // next character after space gets capitalized
+//     } else if (capitalizeNext) {
+//       text.setCharAt(i, toupper(text[i])); // uppercase first letter
+//       capitalizeNext = false;
+//     }
+//   }
 
-  sprite.fillRect(0, 0, tft.width(), tft.height(), TFT_BLACK);
+//   sprite.fillRect(0, 0, tft.width(), tft.height(), TFT_BLACK);
 
-  // Print received data on TFT sprite
-  sprite.setTextSize(2);
-  sprite.setTextColor(TFT_WHITE);
-  sprite.setCursor(0, 0);
+//   // Print received data on TFT sprite
+//   sprite.setTextSize(2);
+//   sprite.setTextColor(TFT_WHITE);
+//   sprite.setCursor(0, 0);
 
-  sprite.print(text);
+//   sprite.print(text);
 
-  sprite.pushSprite(0, 0); // Push to the screen
-}
+//   sprite.pushSprite(0, 0); // Push to the screen
+// }
 
 
 void doSpell(SpellResults spell){
   if (last_spell == spell.name){
     Serial.println("Can't do same spell twice in a row.");
-    LCD_print_basic("Can't do same spell twice in a row.");
+    // LCD_print_basic("Can't do same spell twice in a row.");
     return;
   }
 
   // Print spell name
   Serial.println(spell.name);
-  LCD_print_basic(spell.name);
+  // LCD_print_basic(spell.name);
   last_spell = spell.name;
 
   // Control LED

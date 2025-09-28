@@ -12,7 +12,7 @@ void setup() {
   pinMode(32, OUTPUT);
   digitalWrite(32, HIGH);  // Backlight on
 
-  draw_heart_row(3);
+  draw_heart_row(4);
 
   draw_stunned();
 
@@ -20,8 +20,10 @@ void setup() {
 
   draw_name("Hermione Granger");
 
-  draw_message_box_first_row("Can't do same spell");
-  draw_message_box_second_row("twice in a row");
+  // Examples of long messages
+  // draw_message_box_first_row("Can't repeat spell");
+  draw_message_box_first_row("Wingardium Leviosa");
+  draw_message_box_second_row("Invisibility Cloak");
 }
 
 void draw_text(String text, int x_offset, int y_offset, int text_size){
@@ -30,10 +32,12 @@ void draw_text(String text, int x_offset, int y_offset, int text_size){
 }
 
 void draw_message_box_first_row(String text){
+  tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
   draw_text(text, 0, 47, 2);
 }
 
 void draw_message_box_second_row(String text){
+  tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
   draw_text(text, 0, 67, 2);
 }
 
@@ -63,6 +67,9 @@ void write_shield_timer(String time){
 }
 
 void draw_heart_row(int amount) {
+  //Clear current heart row
+  tft.fillRect(0,105,120,120,TFT_BLACK);
+
   if (amount > 4) amount = 4;
 
   for (int i = 0; i < amount; i++) {
@@ -97,13 +104,11 @@ void clear_shield_area(){
   tft.fillRect(178, 108, 25, 25, TFT_BLACK);
 }
 
-int countdown_start = 10;    // seconds to count down from
-int countdown_start1 = 15;    // seconds to count down from
 int last_sec = 0;
-int remaining_stun_time = countdown_start;
-int remaining_shield_time = countdown_start1;
-bool stunned = true;
-bool shield = true;
+int remaining_stun_time = 0;
+int remaining_shield_time = 0;
+bool stunned = false;
+bool shield = false;
 
 void check_timers() {
   // current second since boot
@@ -120,6 +125,7 @@ void check_timers() {
         remaining_stun_time--;
       }
     } else {
+      if (stunned) draw_message_box_first_row("You're un-stunned!");
       stunned = false;
       clear_stunned_area();
     }
@@ -131,6 +137,7 @@ void check_timers() {
         remaining_shield_time--;
       }
     } else {
+      if (shield) draw_message_box_second_row("Shield disabled!");
       shield = false;
       clear_shield_area();
     }
