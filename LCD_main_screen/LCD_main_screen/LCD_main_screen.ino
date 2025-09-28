@@ -12,46 +12,133 @@ void setup() {
   pinMode(32, OUTPUT);
   digitalWrite(32, HIGH);  // Backlight on
 
-  for (int i = 0; i < 4; i++) {
-    draw_heart(i * 27, 110);    //bottom left corner
-  }
-  // draw_stunned(100, 105); // center
-  // draw_stunned_timer("35", 120, 120);
-  draw_stunned(120, 105); // center
-  draw_text("35", 140, 120, 2);
+  draw_heart_row(3);
 
-  draw_shield(170, 100); // right center
-  draw_text("53", 210, 120, 2);
+  draw_stunned();
 
-  draw_text("Hermione Granger", 0, 0, 2);
+  draw_shield(); 
 
-  draw_text("Can't do same spell", 0, 47, 2);
-  draw_text("twice in a row", 0, 67, 2);
+  draw_name("Hermione Granger");
+
+  draw_message_box_first_row("Can't do same spell");
+  draw_message_box_second_row("twice in a row");
 }
 
-void draw_text(String name, int x_offset, int y_offset, int text_size){
+void draw_text(String text, int x_offset, int y_offset, int text_size){
   tft.setTextSize(text_size);
-  tft.drawString(name, x_offset, y_offset);
+  tft.drawString(text, x_offset, y_offset);
 }
 
-void draw_stunned(int x_offset, int y_offset){
-  tft.fillTriangle(12 + x_offset, 4 + y_offset, 6 + x_offset, 18 + y_offset, 10 + x_offset, 18 + y_offset, TFT_YELLOW);
-  tft.fillTriangle(10 + x_offset, 14 + y_offset, 14 + x_offset, 14 + y_offset, 8 + x_offset, 28 + y_offset, TFT_YELLOW);
+void draw_message_box_first_row(String text){
+  draw_text(text, 0, 47, 2);
 }
 
-void draw_shield(int x_offset, int y_offset){
-  tft.fillTriangle(8 + x_offset,16 + y_offset,20 + x_offset,8 + y_offset,32 + x_offset,16 + y_offset,TFT_BLUE);
-  tft.fillTriangle(8 + x_offset,16 + y_offset,32 + x_offset,16 + y_offset,20 + x_offset,32 + y_offset,TFT_BLUE);
-
-  tft.fillTriangle(12 + x_offset,16 + y_offset,20 + x_offset,12 + y_offset,28 + x_offset,16 + y_offset,TFT_DARKGREY);
-  tft.fillTriangle(12 + x_offset,16 + y_offset,28 + x_offset,16 + y_offset,20 + x_offset,28 + y_offset,TFT_DARKGREY);
+void draw_message_box_second_row(String text){
+  draw_text(text, 0, 67, 2);
 }
 
-void draw_heart(int x_offset, int y_offset){
-  tft.fillCircle(10 + x_offset, 10 + y_offset, 6, TFT_RED);
-  tft.fillCircle(22 + x_offset, 10 + y_offset, 6, TFT_RED);
-  tft.fillTriangle(4 + x_offset, 10 + y_offset, 28 + x_offset, 10 + y_offset, 16 + x_offset, 22 + y_offset, TFT_RED);
+void draw_name(String name){
+  draw_text(name, 0, 0, 2);
+}
+
+void draw_stunned(){
+  tft.fillTriangle(132, 109, 126, 123, 130, 123, TFT_YELLOW);
+  tft.fillTriangle(130, 119, 134, 119, 128, 133, TFT_YELLOW);
+}
+
+void draw_shield(){
+  tft.fillTriangle(178,116,190,108,202,116,TFT_BLUE);
+  tft.fillTriangle(178,116,202,116,190,132,TFT_BLUE);
+
+  tft.fillTriangle(182,116,190,112,198,116,TFT_DARKGREY);
+  tft.fillTriangle(182,116,198,116,190,128,TFT_DARKGREY);
+}
+
+void write_shield_timer(String time){
+  // Clear the timer area
+  tft.fillRect(210,120,25,25,TFT_BLACK);
+
+  // Rewrite timer
+  draw_text(time, 210, 120, 2);
+}
+
+void draw_heart_row(int amount) {
+  if (amount > 4) amount = 4;
+
+  for (int i = 0; i < amount; i++) {
+    int x = i * 27;
+    tft.fillCircle(10 + x, 120, 6, TFT_RED);
+    tft.fillCircle(22 + x, 120, 6, TFT_RED);
+    tft.fillTriangle(4 + x, 120, 28 + x, 120, 16 + x, 132, TFT_RED);
+  }
+}
+
+void write_stunned_timer(String time){
+  // Clear the timer area
+  tft.fillRect(140,120,25,25,TFT_BLACK);
+
+  // Rewrite timer
+  draw_text(time, 140, 120, 2); 
+}
+
+void clear_stunned_area(){
+  // Clear the timer area
+  tft.fillRect(140,120,25,25,TFT_BLACK);
+
+  // Clear stunned icon area
+  tft.fillRect(120,105,30,30,TFT_BLACK);
+}
+
+void clear_shield_area(){
+  // Clear the timer area
+  tft.fillRect(210,120,25,25,TFT_BLACK);
+
+  // Clear stunned icon area
+  tft.fillRect(178, 108, 25, 25, TFT_BLACK);
+}
+
+int countdown_start = 10;    // seconds to count down from
+int countdown_start1 = 15;    // seconds to count down from
+int last_sec = 0;
+int remaining_stun_time = countdown_start;
+int remaining_shield_time = countdown_start1;
+bool stunned = true;
+bool shield = true;
+
+void check_timers() {
+  // current second since boot
+  int curr_sec = millis() / 1000;
+
+  // only update once per second
+  if (curr_sec != last_sec) {
+    last_sec = curr_sec;
+
+    // --- Handle stunned timer ---
+    if (remaining_stun_time > 0) {
+      if (stunned) {
+        write_stunned_timer(String(remaining_stun_time));
+        remaining_stun_time--;
+      }
+    } else {
+      stunned = false;
+      clear_stunned_area();
+    }
+
+    // --- Handle shield timer ---
+    if (remaining_shield_time > 0) {
+      if (shield) {
+        write_shield_timer(String(remaining_shield_time));
+        remaining_shield_time--;
+      }
+    } else {
+      shield = false;
+      clear_shield_area();
+    }
+  }
 }
 
 void loop() {
+  if (stunned || shield){
+    check_timers();
+  }
 }
