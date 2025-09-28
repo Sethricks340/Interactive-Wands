@@ -12,9 +12,26 @@ void setup() {
   pinMode(32, OUTPUT);
   digitalWrite(32, HIGH);  // Backlight on
 
-  draw_heart(0,110); //bottom left corner
-  draw_stunned(100,50); // center
-  draw_shield(150, 50); // right center
+  for (int i = 0; i < 4; i++) {
+    draw_heart(i * 27, 110);    //bottom left corner
+  }
+  // draw_stunned(100, 105); // center
+  // draw_stunned_timer("35", 120, 120);
+  draw_stunned(120, 105); // center
+  draw_text("35", 140, 120, 2);
+
+  draw_shield(170, 100); // right center
+  draw_text("53", 210, 120, 2);
+
+  draw_text("Hermione Granger", 0, 0, 2);
+
+  draw_text("Can't do same spell", 0, 47, 2);
+  draw_text("twice in a row", 0, 67, 2);
+}
+
+void draw_text(String name, int x_offset, int y_offset, int text_size){
+  tft.setTextSize(text_size);
+  tft.drawString(name, x_offset, y_offset);
 }
 
 void draw_stunned(int x_offset, int y_offset){
