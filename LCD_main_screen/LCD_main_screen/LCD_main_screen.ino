@@ -4,6 +4,12 @@
 // 240×135 pixels
 TFT_eSPI tft = TFT_eSPI();
 
+int last_sec = 0;
+int remaining_stun_time = 0;
+int remaining_shield_time = 0;
+bool stunned = false;
+bool shield = false;
+
 void setup() {
   tft.init();
   tft.setRotation(1);
@@ -103,12 +109,6 @@ void clear_shield_area(){
   // Clear stunned icon area
   tft.fillRect(178, 108, 25, 25, TFT_BLACK);
 }
-
-int last_sec = 0;
-int remaining_stun_time = 0;
-int remaining_shield_time = 0;
-bool stunned = false;
-bool shield = false;
 
 void check_timers() {
   // current second since boot

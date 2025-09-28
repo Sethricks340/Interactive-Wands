@@ -5,18 +5,15 @@
 // * Press button, do spell, release button
 // * Works best with a small pause inbetween each movement
 
-//TODO: Add shielding logic
-//TODO: Add countdown prints to shield and disable
-//TODO: Add dummy ISR
+// TODO: Add timer for LED shut off after spell
 
 #include <Wire.h>
-// #include <Arduino.h>
 #include <math.h>
 #include <TFT_eSPI.h>
 #include <SPI.h>
 
 TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite sprite = TFT_eSprite(&tft);  // Create a sprite buffer
+// TFT_eSprite sprite = TFT_eSprite(&tft);  // Create a sprite buffer
 
 const int buttonPin = 33; // the pin your button is connected to
 int buttonState = 0;
@@ -48,13 +45,16 @@ volatile bool YL = false;   // Yaw Left
 
 // TODO: Are these valid?
 // Possible flags for wand
-volatile bool shielded = false;  // Wand can't be affected by spells
-volatile bool disabled = false;  // Wand can't cast spells
+volatile bool shield = false;  // Wand can't be affected by spells
+volatile bool stunned = false;  // Wand can't cast spells
 volatile bool listening = false; // If the button is pressed
 
-volatile unsigned long disableTime = 0; // Time wand is disabled for
-volatile unsigned long shieldTime = 0; // Time wand is shielded for
-volatile int lives = 3; // Total lives, 3 is max
+// volatile unsigned long stunTime = 0; // Time wand is stunned for
+// volatile unsigned long shieldTime = 0; // Time wand is shielded for
+int last_sec = 0;
+int remaining_stun_time = 0;
+int remaining_shield_time = 0;
+volatile int lives = 3; // Total lives, 4 is max
 
 const int threshold = 800;
 
@@ -75,16 +75,16 @@ struct SpellResults {
     int blue;
 
     int self_shield;
-    int self_disable;
+    int self_stun;
     int self_life;
 
     int others_shield;
-    int others_disable;
+    int others_stun;
     int others_life;
 };
 
 Spell spells[] = {
-// Spell name, length of moves, moves, RGB, self-shield, self-disable, self-life, others-shield, others-disable, others-life, spell owner
+// Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
   {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
   {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -1, 3, 0, -1},   "None"},       // Redish-orange
   {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 0, 3, 0, 0},    "None"},       // Yellow
@@ -95,13 +95,13 @@ Spell spells[] = {
 };
 
 Spell characterSpells[] = {
-  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly"},      // Yellow-green1
-  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {30, 10, 1, 0, 0, 0},   "Fred"},       // Yellow-green2
-  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione"},   // Coral green
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -3},   "Voldemort"},  // Green
-  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron"},        // Greenish-blue
-  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 1, 0, 0, 1},    "Luna"},       // Sky blue
-  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {30, 10, 1, 0, 0, 0},   "Harry"},      // White
+  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly Weasley"},      // Yellow-green1
+  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {30, 10, 1, 0, 0, 0},   "Fred Weasley"},       // Yellow-green2
+  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione Granger"},   // Coral green
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -3},   "Lord Voldemort"},  // Green
+  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron Weasley"},        // Greenish-blue
+  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 1, 0, 0, 1},    "Luna Lovegood"},       // Sky blue
+  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {30, 10, 1, 0, 0, 0},   "Harry Potter"},      // White
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -111,13 +111,13 @@ const int MAX_SIZE = 4;
 String spellChecker[MAX_SIZE]; 
 volatile int listCount = 0;    
 
-const String self_name = "Molly";
-// const String self_name = "Fred";
-// const String self_name = "Hermione";
-// const String self_name = "Voldemort";
-// const String self_name = "Ron";
-// const String self_name = "Luna";
-// const String self_name = "Harry";
+const String self_name = "Molly Weasley";
+// const String self_name = "Fred Weasley";
+// const String self_name = "Hermione Granger";
+// const String self_name = "Lord Voldemort";
+// const String self_name = "Ron Weasley";
+// const String self_name = "Luna Lovegood";
+// const String self_name = "Harry Potter";
 Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
 
 String last_spell = "";
@@ -133,7 +133,7 @@ void setup() {
   pinMode(32, OUTPUT);
   digitalWrite(32, HIGH);  // Backlight on
 
-  sprite.createSprite(tft.width(), tft.height());
+  // sprite.createSprite(tft.width(), tft.height());
 
   Serial.begin(115200);        
   Wire.begin();
@@ -146,16 +146,16 @@ void setup() {
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(motorPin, OUTPUT);
   digitalWrite(motorPin, LOW);
+
+  draw_heart_row(3);
+
   delay(100);
 
   control_LED(0, 0, 0); // LED off
   
   setupMPU();
   getCharacterSpell();
-  Serial.print(characterSpell.wizard_name);
-  Serial.println(": READY");
-
-  // LCD_print_basic("READY");
+  draw_name(self_name);
 }
 
 void loop() {
@@ -166,32 +166,151 @@ void loop() {
   if (elapsed < dt) return;
 
   listening = !digitalRead(buttonPin); // Low (false) means button pressed
-  
-  // Check global bools for filtering data sampling  
-  if ((now - lastTime) >= disableTime && disabled){
-    Serial.println("Wand re-enabeled");
-    control_LED(0, 0, 0); // LED off
-    buzzVibrator(250, 2);
-    disabled = false;
+
+  spell_recognizing_sequence();
+
+  lastTime = now;
+
+  check_movements();
+  if (stunned || shield){
+    check_timers();
   }
-  if (disabled){
-    // Serial.println("Disabled is true, returning...");
-    return;
+}
+
+void draw_text(String text, int x_offset, int y_offset, int text_size){
+  tft.setTextSize(text_size);
+  tft.drawString(text, x_offset, y_offset);
+}
+
+void draw_message_box_first_row(String text){
+  tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
+  draw_text(text, 0, 47, 2);
+}
+
+void draw_message_box_second_row(String text){
+  tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
+  draw_text(text, 0, 67, 2);
+}
+
+void draw_name(String name){
+  draw_text(name, 0, 0, 2);
+}
+
+void draw_stunned(){
+  tft.fillTriangle(132, 109, 126, 123, 130, 123, TFT_YELLOW);
+  tft.fillTriangle(130, 119, 134, 119, 128, 133, TFT_YELLOW);
+}
+
+void draw_shield(){
+  tft.fillTriangle(178,116,190,108,202,116,TFT_BLUE);
+  tft.fillTriangle(178,116,202,116,190,132,TFT_BLUE);
+
+  tft.fillTriangle(182,116,190,112,198,116,TFT_DARKGREY);
+  tft.fillTriangle(182,116,198,116,190,128,TFT_DARKGREY);
+}
+
+void write_shield_timer(String time){
+  // Clear the timer area
+  tft.fillRect(210,120,25,25,TFT_BLACK);
+
+  // Rewrite timer
+  draw_text(time, 210, 120, 2);
+}
+
+void draw_heart_row(int amount) {
+  //Clear current heart row
+  tft.fillRect(0,105,120,120,TFT_BLACK);
+
+  if (amount > 4) amount = 4;
+
+  for (int i = 0; i < amount; i++) {
+    int x = i * 27;
+    tft.fillCircle(10 + x, 120, 6, TFT_RED);
+    tft.fillCircle(22 + x, 120, 6, TFT_RED);
+    tft.fillTriangle(4 + x, 120, 28 + x, 120, 16 + x, 132, TFT_RED);
   }
+}
+
+void write_stunned_timer(String time){
+  // Clear the timer area
+  tft.fillRect(140,120,25,25,TFT_BLACK);
+
+  // Rewrite timer
+  draw_text(time, 140, 120, 2); 
+}
+
+void clear_stunned_area(){
+  // Clear the timer area
+  tft.fillRect(140,120,25,25,TFT_BLACK);
+
+  // Clear stunned icon area
+  tft.fillRect(120,105,30,30,TFT_BLACK);
+}
+
+void clear_shield_area(){
+  // Clear the timer area
+  tft.fillRect(210,120,25,25,TFT_BLACK);
+
+  // Clear stunned icon area
+  tft.fillRect(178, 108, 25, 25, TFT_BLACK);
+}
+
+void check_timers() {
+  // current second since boot
+  int curr_sec = millis() / 1000;
+
+  // only update once per second
+  if (curr_sec != last_sec) {
+    last_sec = curr_sec;
+
+    // --- Handle stunned timer ---
+    if (remaining_stun_time > 0) {
+      if (stunned) {
+        write_stunned_timer(String(remaining_stun_time));
+        remaining_stun_time--;
+      }
+    } else {
+      if (stunned) {
+        draw_message_box_first_row("You're un-stunned!");
+        buzzVibrator(250, 2);
+      }
+      stunned = false;
+      clear_stunned_area();
+    }
+
+    // --- Handle shield timer ---
+    if (remaining_shield_time > 0) {
+      if (shield) {
+        write_shield_timer(String(remaining_shield_time));
+        remaining_shield_time--;
+      }
+    } else {
+      if (shield){
+        draw_message_box_second_row("Shield disabled!");
+        buzzVibrator(250, 2);
+      }
+      shield = false;
+      clear_shield_area();
+    }
+  }
+}
+
+void spell_recognizing_sequence(){
   if (listCount && !listening){ // No movement for 1 second, and button is released
     SpellResults spell = checkThroughSpells();
     if (spell.name != "None"){
       doSpell(spell);
     }
     else{
-      Serial.println("Spell not recognized");
-      // LCD_print_basic("Spell not recognized");
+      draw_message_box_first_row("Spell not recognized");
+      draw_message_box_second_row(" ");
+      buzzVibrator(750, 1);
     }
     clearSpellChecker();
   }
+}
 
-  lastTime = now;
-
+void check_movements(){
   // Create a buffer to hold 14 bytes from the MPU6500:
   uint8_t buf[14];
   // Read 14 sequential registers starting at ACCEL_XOUT_H (0x3B)
@@ -318,8 +437,8 @@ SpellResults checkThroughSpells() {
   SpellResults result;
   result.name = "None"; // default
   result.red = result.green = result.blue = 0;
-  result.self_shield = result.self_disable = result.self_life =
-  result.others_shield = result.others_disable = result.others_life = 0;
+  result.self_shield = result.self_stun = result.self_life =
+  result.others_shield = result.others_stun = result.others_life = 0;
 
   // --- check normal spells ---
   for (int i = 0; i < NUM_SPELLS; i++) {
@@ -340,17 +459,16 @@ SpellResults checkThroughSpells() {
       result.blue  = spells[i].colors[2];
 
       result.self_shield   = spells[i].affects[0];
-      result.self_disable  = spells[i].affects[1];
+      result.self_stun  = spells[i].affects[1];
       result.self_life     = spells[i].affects[2];
       result.others_shield = spells[i].affects[3];
-      result.others_disable= spells[i].affects[4];
+      result.others_stun= spells[i].affects[4];
       result.others_life   = spells[i].affects[5];
 
       return result;
     }
 }
   // --- check character spell explicitly ---
-  // (example: 2 moves PB and PF)
   if (listCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
     result.name = characterSpell.name;
     result.red   = characterSpell.colors[0];
@@ -358,10 +476,10 @@ SpellResults checkThroughSpells() {
     result.blue  = characterSpell.colors[2];
 
     result.self_shield   = characterSpell.affects[0];
-    result.self_disable  = characterSpell.affects[1];
+    result.self_stun  = characterSpell.affects[1];
     result.self_life     = characterSpell.affects[2];
     result.others_shield = characterSpell.affects[3];
-    result.others_disable= characterSpell.affects[4];
+    result.others_stun= characterSpell.affects[4];
     result.others_life   = characterSpell.affects[5];
 
     return result;
@@ -369,87 +487,51 @@ SpellResults checkThroughSpells() {
   return result; // default "None"
 }
 
-// void LCD_print_basic(String text){
-//   // Clear previous text
-//   text.replace("_", " ");
-
-//   bool capitalizeNext = true;
-//   for (int i = 0; i < text.length(); i++) {
-//     if (text[i] == ' ') {
-//       capitalizeNext = true;       // next character after space gets capitalized
-//     } else if (capitalizeNext) {
-//       text.setCharAt(i, toupper(text[i])); // uppercase first letter
-//       capitalizeNext = false;
-//     }
-//   }
-
-//   sprite.fillRect(0, 0, tft.width(), tft.height(), TFT_BLACK);
-
-//   // Print received data on TFT sprite
-//   sprite.setTextSize(2);
-//   sprite.setTextColor(TFT_WHITE);
-//   sprite.setCursor(0, 0);
-
-//   sprite.print(text);
-
-//   sprite.pushSprite(0, 0); // Push to the screen
-// }
-
-
 void doSpell(SpellResults spell){
   if (last_spell == spell.name){
-    Serial.println("Can't do same spell twice in a row.");
-    // LCD_print_basic("Can't do same spell twice in a row.");
+    draw_message_box_first_row("Can't repeat spell");
+    draw_message_box_second_row(" ");
+    buzzVibrator(750, 1);
     return;
   }
-
-  // Print spell name
-  Serial.println(spell.name);
-  // LCD_print_basic(spell.name);
   last_spell = spell.name;
+  draw_message_box_first_row(spell.name);
 
-  // Control LED
   control_LED(spell.red, spell.green, spell.blue);
 
   buzzVibrator(250, 2);
 
-  // Handle self shield
-  shielded = (spell.self_shield > 0);
-  shieldTime = (unsigned long)spell.self_shield * 1000000UL; // Convert seconds to micros
-  if(shielded){
-    Serial.print("Self shielded for ");
-    Serial.print(shieldTime / 1000000UL);
-    Serial.println(" seconds");
-  } else {
-    Serial.println("Self not shielded");
+  // TODO: make this logic
+  if (spell.self_shield) handle_self_shield(spell.self_shield);
+  if (spell.self_stun) handle_self_stun(spell.self_stun);
+  if (spell.self_life) handle_self_life(spell.self_life);
+  // handle_others_shield(spell.others_shield);
+  // handle_others_stun(spell.others_stun);
+  // handle_others_life(spell.others_life);
+
+}
+
+void handle_self_shield(int time){
+  draw_shield(); 
+  shield = true;
+  remaining_shield_time = time;
+}
+
+void handle_self_stun(int time){
+  draw_stunned(); 
+  stunned = true;
+  remaining_stun_time = time;
+}
+
+void handle_self_life(int amount){
+  lives += amount;
+  if (lives > 4){
+    lives = 4;
   }
-
-  // Handle self disable
-  disableTime = (unsigned long)spell.self_disable * 1000000UL; // Convert seconds to micros
-  disabled = (spell.self_disable > 0);
-  if (disabled){
-    Serial.print("Self disabled for ");
-    Serial.print(disableTime / 1000000UL);
-    Serial.println(" seconds");
-  } else {
-    Serial.println("Self not disabled");
+  if (lives <= 0){
+    // TODO: Dead logic here
   }
-
-  // Update lives with clamping
-  lives += spell.self_life;
-  if (lives < 0) lives = 0;
-  if (lives > 5) lives = 5;
-  Serial.print("Lives: ");
-  Serial.println(lives);
-
-  Serial.print("others_shield: ");
-  Serial.println(spell.others_shield);
-  Serial.print("others_disable: ");
-  Serial.println(spell.others_disable);
-  Serial.print("others_life: ");
-  Serial.println(spell.others_life);
-  Serial.println(" ");
-    // result.self_shield = result.self_disable = result.self_life = result.others_shield = result.others_disable = result.others_life = 0;
+  draw_heart_row(lives);
 }
 
 void writeRegister(uint8_t reg, uint8_t val) {
