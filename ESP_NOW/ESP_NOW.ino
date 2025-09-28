@@ -5,8 +5,6 @@
 // * Press button, do spell, release button
 // * Works best with a small pause inbetween each movement
 
-// TODO: Add timer for LED shut off after spell
-
 #include <Wire.h>
 #include <math.h>
 #include <TFT_eSPI.h>
@@ -43,17 +41,16 @@ volatile bool PB = false;   // Pitch Back
 volatile bool YR = false;   // Yaw Right
 volatile bool YL = false;   // Yaw Left
 
-// TODO: Are these valid?
-// Possible flags for wand
 volatile bool shield = false;  // Wand can't be affected by spells
 volatile bool stunned = false;  // Wand can't cast spells
 volatile bool listening = false; // If the button is pressed
 
-// volatile unsigned long stunTime = 0; // Time wand is stunned for
-// volatile unsigned long shieldTime = 0; // Time wand is shielded for
 int last_sec = 0;
 int remaining_stun_time = 0;
 int remaining_shield_time = 0;
+int LED_on = false;
+int LED_start_time = 3;
+int LED_timeout = 3000; // 3 seconds (3000ms)
 volatile int lives = 3; // Total lives, 4 is max
 
 const int threshold = 800;
@@ -64,7 +61,7 @@ struct Spell {
     int length;       // number of movements
     const char* moves[4];  // max movements per spell
     int colors[3];
-    int affects[6];
+    int effects[6];
     String wizard_name;
 };
 
@@ -169,6 +166,10 @@ void loop() {
 
   spell_recognizing_sequence();
 
+  if (millis() - LED_start_time > LED_timeout){
+    control_LED(0, 0, 0);
+  }
+
   lastTime = now;
 
   check_movements();
@@ -270,12 +271,12 @@ void check_timers() {
         remaining_stun_time--;
       }
     } else {
+      clear_stunned_area();
       if (stunned) {
         draw_message_box_first_row("You're un-stunned!");
         buzzVibrator(250, 2);
       }
       stunned = false;
-      clear_stunned_area();
     }
 
     // --- Handle shield timer ---
@@ -285,21 +286,24 @@ void check_timers() {
         remaining_shield_time--;
       }
     } else {
+      clear_shield_area();
       if (shield){
         draw_message_box_second_row("Shield disabled!");
         buzzVibrator(250, 2);
       }
       shield = false;
-      clear_shield_area();
     }
   }
 }
 
 void spell_recognizing_sequence(){
-  if (listCount && !listening){ // No movement for 1 second, and button is released
+  if (listCount && !listening){ // Movement detected while button was pressed, and button is now released
     SpellResults spell = checkThroughSpells();
     if (spell.name != "None"){
       doSpell(spell);
+      // LED timer here
+      LED_start_time = millis();
+      LED_on = true;
     }
     else{
       draw_message_box_first_row("Spell not recognized");
@@ -398,7 +402,7 @@ void getCharacterSpell(){
       characterSpell.length = characterSpells[i].length;
       for(int j = 0; j < 4; j++) characterSpell.moves[j] = characterSpells[i].moves[j];
       for(int j = 0; j < 3; j++) characterSpell.colors[j] = characterSpells[i].colors[j];
-      for(int j = 0; j < 6; j++) characterSpell.affects[j] = characterSpells[i].affects[j];
+      for(int j = 0; j < 6; j++) characterSpell.effects[j] = characterSpells[i].effects[j];
       characterSpell.wizard_name = characterSpells[i].wizard_name;
     }
   }
@@ -458,12 +462,12 @@ SpellResults checkThroughSpells() {
       result.green = spells[i].colors[1];
       result.blue  = spells[i].colors[2];
 
-      result.self_shield   = spells[i].affects[0];
-      result.self_stun  = spells[i].affects[1];
-      result.self_life     = spells[i].affects[2];
-      result.others_shield = spells[i].affects[3];
-      result.others_stun= spells[i].affects[4];
-      result.others_life   = spells[i].affects[5];
+      result.self_shield   = spells[i].effects[0];
+      result.self_stun  = spells[i].effects[1];
+      result.self_life     = spells[i].effects[2];
+      result.others_shield = spells[i].effects[3];
+      result.others_stun= spells[i].effects[4];
+      result.others_life   = spells[i].effects[5];
 
       return result;
     }
@@ -475,12 +479,12 @@ SpellResults checkThroughSpells() {
     result.green = characterSpell.colors[1];
     result.blue  = characterSpell.colors[2];
 
-    result.self_shield   = characterSpell.affects[0];
-    result.self_stun  = characterSpell.affects[1];
-    result.self_life     = characterSpell.affects[2];
-    result.others_shield = characterSpell.affects[3];
-    result.others_stun= characterSpell.affects[4];
-    result.others_life   = characterSpell.affects[5];
+    result.self_shield   = characterSpell.effects[0];
+    result.self_stun  = characterSpell.effects[1];
+    result.self_life     = characterSpell.effects[2];
+    result.others_shield = characterSpell.effects[3];
+    result.others_stun= characterSpell.effects[4];
+    result.others_life   = characterSpell.effects[5];
 
     return result;
   }
@@ -501,10 +505,11 @@ void doSpell(SpellResults spell){
 
   buzzVibrator(250, 2);
 
-  // TODO: make this logic
   if (spell.self_shield) handle_self_shield(spell.self_shield);
   if (spell.self_stun) handle_self_stun(spell.self_stun);
   if (spell.self_life) handle_self_life(spell.self_life);
+  
+  // TODO: Make others logic 
   // handle_others_shield(spell.others_shield);
   // handle_others_stun(spell.others_stun);
   // handle_others_life(spell.others_life);
