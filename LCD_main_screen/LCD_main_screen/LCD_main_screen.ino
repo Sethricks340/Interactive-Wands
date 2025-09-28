@@ -12,26 +12,29 @@ void setup() {
   pinMode(32, OUTPUT);
   digitalWrite(32, HIGH);  // Backlight on
 
-  // Create heart sprite
-  TFT_eSprite heart = TFT_eSprite(&tft);
-  heart.createSprite(16, 16);      // size of the sprite
-  heart.fillSprite(TFT_BLACK);     // clear to black
+  draw_heart(0,110); //bottom left corner
+  draw_stunned(100,50); // center
+  draw_shield(150, 50); // right center
+}
 
-  uint16_t heartColor = TFT_RED;
-  heart.fillCircle(5, 5, 3, heartColor);     // top-left lobe
-  heart.fillCircle(11, 5, 3, heartColor);     // top-right lobe
-  heart.fillTriangle(2, 5, 14, 5, 8, 11, heartColor);  // bottom triangle
+void draw_stunned(int x_offset, int y_offset){
+  tft.fillTriangle(24 + x_offset,8 + y_offset, 12 + x_offset,36 + y_offset,20 + x_offset,36 + y_offset,TFT_YELLOW);
+  tft.fillTriangle(20 + x_offset,28 + y_offset,28 + x_offset,28 + y_offset,16 + x_offset,56 + y_offset,TFT_YELLOW);
+}
 
-  int heartWidth = 16;
-  int heartHeight = 16;
-  int bottomY = tft.height() - heartHeight;
+void draw_shield(int x_offset, int y_offset){
+  tft.fillTriangle(8 + x_offset,16 + y_offset,20 + x_offset,8 + y_offset,32 + x_offset,16 + y_offset,TFT_BLUE);
+  tft.fillTriangle(8 + x_offset,16 + y_offset,32 + x_offset,16 + y_offset,20 + x_offset,32 + y_offset,TFT_BLUE);
 
-  for (int i = 0; i < 5; i++) {
-      int xPos = i * heartWidth;
-      heart.pushSprite(xPos, bottomY);
-  }
+  tft.fillTriangle(12 + x_offset,16 + y_offset,20 + x_offset,12 + y_offset,28 + x_offset,16 + y_offset,TFT_DARKGREY);
+  tft.fillTriangle(12 + x_offset,16 + y_offset,28 + x_offset,16 + y_offset,20 + x_offset,28 + y_offset,TFT_DARKGREY);
+}
+
+void draw_heart(int x_offset, int y_offset){
+  tft.fillCircle(10 + x_offset, 10 + y_offset, 6, TFT_RED);
+  tft.fillCircle(22 + x_offset, 10 + y_offset, 6, TFT_RED);
+  tft.fillTriangle(4 + x_offset, 10 + y_offset, 28 + x_offset, 10 + y_offset, 16 + x_offset, 22 + y_offset, TFT_RED);
 }
 
 void loop() {
-  // nothing here yet
 }
