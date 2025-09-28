@@ -18,8 +18,8 @@ void setup() {
 }
 
 void draw_stunned(int x_offset, int y_offset){
-  tft.fillTriangle(24 + x_offset,8 + y_offset, 12 + x_offset,36 + y_offset,20 + x_offset,36 + y_offset,TFT_YELLOW);
-  tft.fillTriangle(20 + x_offset,28 + y_offset,28 + x_offset,28 + y_offset,16 + x_offset,56 + y_offset,TFT_YELLOW);
+  tft.fillTriangle(12 + x_offset, 4 + y_offset, 6 + x_offset, 18 + y_offset, 10 + x_offset, 18 + y_offset, TFT_YELLOW);
+  tft.fillTriangle(10 + x_offset, 14 + y_offset, 14 + x_offset, 14 + y_offset, 8 + x_offset, 28 + y_offset, TFT_YELLOW);
 }
 
 void draw_shield(int x_offset, int y_offset){
