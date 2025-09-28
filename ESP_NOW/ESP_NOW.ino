@@ -304,6 +304,10 @@ void check_timers() {
 }
 
 void spell_recognizing_sequence(){
+  if (stunned){
+    clearSpellChecker();
+    return;
+  }
   if (listCount && !listening){ // Movement detected while button was pressed, and button is now released
     SpellResults spell = checkThroughSpells();
     if (spell.name != "None"){
@@ -311,9 +315,6 @@ void spell_recognizing_sequence(){
       // LED timer here
       LED_start_time = millis();
       LED_on = true;
-    }
-    else if (stunned){ // If wand is stunned
-      draw_message_box_first_row("Can't cast: stunned!");
     }
     else{
       draw_message_box_first_row("Spell not recognized");
