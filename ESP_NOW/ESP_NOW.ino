@@ -5,6 +5,13 @@
 // * Press button, do spell, release button
 // * Works best with a small pause inbetween each movement
 
+// TODO: 
+//    Add dead logic
+//    Add 'others' logic
+//    Merge with ESP-NOW
+//    Can't do spells while stunned
+//    Can't bit hit when shielded
+
 #include <Wire.h>
 #include <math.h>
 #include <TFT_eSPI.h>
@@ -84,21 +91,21 @@ Spell spells[] = {
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
   {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
   {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -1, 3, 0, -1},   "None"},       // Redish-orange
-  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 0, 3, 0, 0},    "None"},       // Yellow
+  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 1, 3, 0, 0},    "None"},       // Yellow
   {"Protego Maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 0, 10, 0, 0},  "None"},       // Blue
   {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 1, 3, 0, -1},   "None"},       // Darker Pink
   {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -1},    "None"},       // Lighter Pink
-  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 15, -1, 3, 0, -1}, "None"},       // Teal
+  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 10, -1, 3, 0, -1}, "None"},       // Teal
 };
 
 Spell characterSpells[] = {
-  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly Weasley"},      // Yellow-green1
-  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {30, 10, 1, 0, 0, 0},   "Fred Weasley"},       // Yellow-green2
-  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione Granger"},   // Coral green
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -3},   "Lord Voldemort"},  // Green
-  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron Weasley"},        // Greenish-blue
+  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly Weasley"},       // Yellow-green1
+  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {15, 3, 1, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
+  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione Granger"},    // Coral green
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -2},   "Lord Voldemort"},      // Green
+  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron Weasley"},         // Greenish-blue
   {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 1, 0, 0, 1},    "Luna Lovegood"},       // Sky blue
-  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {30, 10, 1, 0, 0, 0},   "Harry Potter"},      // White
+  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 1, 0, 0, 0},   "Harry Potter"},        // White
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -304,6 +311,9 @@ void spell_recognizing_sequence(){
       // LED timer here
       LED_start_time = millis();
       LED_on = true;
+    }
+    else if (stunned){ // If wand is stunned
+      draw_message_box_first_row("Can't cast: stunned!");
     }
     else{
       draw_message_box_first_row("Spell not recognized");
@@ -754,4 +764,3 @@ void control_LED(int redValue, int greenValue, int blueValue){
 
 //     delay(100);
 //   }
-// }
