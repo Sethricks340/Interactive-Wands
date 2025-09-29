@@ -6,11 +6,9 @@
 // * Works best with a small pause inbetween each movement
 
 // TODO: 
-//    Merge with ESP-NOW
-//    Spells sent over ESP-NOW
-//    Add 'others' logic
-//    Can't get hit when shielded
-//    Add dead logic
+//    Spell affects logic logic
+//    Dead logic
+//    Start game logic
 
 #include <Wire.h>
 #include <math.h>
@@ -24,17 +22,6 @@ TFT_eSPI tft = TFT_eSPI();
 
 // REPLACE WITH YOUR RECEIVER MAC Address
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-// Structure example to send data
-// typedef struct struct_message {
-//   char a[32];
-//   int b;
-//   float c;
-//   bool d;
-// } struct_message;
-
-// // // Create a struct_message called myData
-// struct_message myData;
 
 char message[32];
 
@@ -178,8 +165,7 @@ void setup() {
     return;
   }
 
-  // Register send callback
-  // esp_now_register_send_cb(OnDataSent);
+  // Register recieve callback
   esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
 
   // Register peer
@@ -228,7 +214,11 @@ void loop() {
 }
 
 // callback function that will be executed when data is received
-void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len) {
+void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
+  // Spell has no effect if your shield is on
+  if (shield){
+    return;
+  }
   // If you want the MAC address:
   const uint8_t *mac = info->src_addr;   // <- new way to get sender MAC
 
@@ -236,21 +226,27 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   memcpy(message, incomingData, len);
   message[len] = '\0'; // null terminate
 
-  // Display on TFT
-  // sprite.fillSprite(TFT_BLACK);
-  // sprite.setTextSize(2);
-  // sprite.setTextColor(TFT_WHITE);
-  // sprite.setCursor(0, 0);
-  // sprite.printf("Received: %s", message);
-  // sprite.pushSprite(0, 0);
-  draw_message_box_first_row(message);
-}
+  // TODO: Make more exciting hit animation?
+  draw_message_box_first_row("Hit by:");
+  draw_message_box_second_row(message);
 
-// callback when data is sent (new IDF v5.x signature)
-// TODO: might not need this
-// void OnDataSent(const wifi_tx_info_t *info, esp_now_send_status_t status) {
-//   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-// }
+  // TODO: not scaning spells correctly
+  for (int i = 0; i < NUM_SPELLS; i++) {
+    if (strcmp(spells[i].name, message) == 0){
+      // TODO: add attacking affects here (last 3 of spell affects)
+      draw_message_box_first_row("normal spell match"); //TODO: remove this line
+      break;
+    }
+  }
+
+  for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
+    if (strcmp(characterSpells[i].name, message) == 0){
+      // TODO: add attacking affects here (last 3 of spell affects)
+      draw_message_box_first_row("character spell match"); //TODO: remove this line
+      break;
+    }
+  }
+}
 
 void draw_text(String text, int x_offset, int y_offset, int text_size){
   tft.setTextSize(text_size);
@@ -507,14 +503,6 @@ void addToSpellChecker(String spell){
   listCount++;
 }
 
-void printSpellChecker() {
-  Serial.print("Movements: ");
-  for (int i = 0; i < listCount; i++) {
-    Serial.print(spellChecker[i]); Serial.print(" ");
-  }
-  Serial.println();
-}
-
 SpellResults checkThroughSpells() {
   SpellResults result;
   result.name = "None"; // default
@@ -587,14 +575,10 @@ void doSpell(SpellResults spell){
   if (spell.self_stun) handle_self_stun(spell.self_stun);
   if (spell.self_life) handle_self_life(spell.self_life);
   
-  // TODO: Make others logic 
-  // handle_others_shield(spell.others_shield);
-  // handle_others_stun(spell.others_stun);
-  // handle_others_life(spell.others_life);
-
   String spell_to_send = spell.name;
   spell_to_send.trim();
   spell_to_send.toCharArray(message, sizeof(message));
+  // Send spell to any nearby wands using ESP-NOW
   esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
 }
 
