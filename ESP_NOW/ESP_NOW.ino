@@ -227,23 +227,28 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   message[len] = '\0'; // null terminate
 
   // TODO: Make more exciting hit animation?
-  draw_message_box_first_row("Hit by:");
-  draw_message_box_second_row(message);
 
-  // TODO: not scaning spells correctly
   for (int i = 0; i < NUM_SPELLS; i++) {
-    if (strcmp(spells[i].name, message) == 0){
-      // TODO: add attacking affects here (last 3 of spell affects)
-      draw_message_box_first_row("normal spell match"); //TODO: remove this line
-      break;
+    if (strcmp(spells[i].name, message) == 0){   
+      draw_message_box_first_row("Hit by:");
+      draw_message_box_second_row(message);
+      buzzVibrator(250, 2);
+      if (spells[i].effects[3]) handle_self_shield(spells[i].effects[3]);
+      if (spells[i].effects[4]) handle_self_stun(spells[i].effects[4]);
+      if (spells[i].effects[5]) handle_self_life(spells[i].effects[5]);
+      return;
     }
   }
 
   for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
     if (strcmp(characterSpells[i].name, message) == 0){
-      // TODO: add attacking affects here (last 3 of spell affects)
-      draw_message_box_first_row("character spell match"); //TODO: remove this line
-      break;
+      draw_message_box_first_row("Hit by:");
+      draw_message_box_second_row(message);
+      buzzVibrator(250, 2);
+      if (characterSpells[i].effects[3]) handle_self_shield(characterSpells[i].effects[3]);
+      if (characterSpells[i].effects[4]) handle_self_stun(characterSpells[i].effects[4]);
+      if (characterSpells[i].effects[5]) handle_self_life(characterSpells[i].effects[5]);
+      return;
     }
   }
 }
