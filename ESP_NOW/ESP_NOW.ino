@@ -6,8 +6,7 @@
 // * Works best with a small pause inbetween each movement
 
 // TODO: 
-//    Spell affects logic logic
-//    Dead logic
+//    Get rid of SpellEffects struct (just use spell)    
 //    Start game logic
 
 #include <Wire.h>
@@ -65,7 +64,7 @@ int remaining_shield_time = 0;
 int LED_on = false;
 int LED_start_time = 3;
 int LED_timeout = 3000; // 3 seconds (3000ms)
-volatile int lives = 3; // Total lives, 4 is max
+volatile long Points = 3; // Total Points in this game
 
 const int threshold = 800;
 
@@ -87,11 +86,11 @@ struct SpellResults {
 
     int self_shield;
     int self_stun;
-    int self_life;
+    int self_points;
 
     int others_shield;
     int others_stun;
-    int others_life;
+    int others_points;
 };
 
 Spell spells[] = {
@@ -179,7 +178,13 @@ void setup() {
     return;
   }
 
-  draw_heart_row(3);
+  draw_heart_icon();
+  Points = 100000;
+  draw_shield();
+  draw_stunned();
+  draw_message_box_first_row("This is a test. Yay!");
+  draw_message_box_second_row("This is the second.");
+  update_points_print();
 
   delay(100);
 
@@ -213,6 +218,8 @@ void loop() {
   }
 }
 
+//--- ESP-NOW Functions ---//
+
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
   // Spell has no effect if your shield is on
@@ -235,7 +242,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
       buzzVibrator(250, 2);
       if (spells[i].effects[3]) handle_self_shield(spells[i].effects[3]);
       if (spells[i].effects[4]) handle_self_stun(spells[i].effects[4]);
-      if (spells[i].effects[5]) handle_self_life(spells[i].effects[5]);
+      if (spells[i].effects[5]) handle_self_points(spells[i].effects[5]);
       return;
     }
   }
@@ -247,150 +254,25 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
       buzzVibrator(250, 2);
       if (characterSpells[i].effects[3]) handle_self_shield(characterSpells[i].effects[3]);
       if (characterSpells[i].effects[4]) handle_self_stun(characterSpells[i].effects[4]);
-      if (characterSpells[i].effects[5]) handle_self_life(characterSpells[i].effects[5]);
+      if (characterSpells[i].effects[5]) handle_self_points(characterSpells[i].effects[5]);
       return;
     }
   }
 }
 
-void draw_text(String text, int x_offset, int y_offset, int text_size){
-  tft.setTextSize(text_size);
-  tft.drawString(text, x_offset, y_offset);
+void Send_ESP_Now_String(){
+
 }
 
-void draw_message_box_first_row(String text){
-  tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
-  draw_text(text, 0, 47, 2);
-}
+//--- MPU Functions ---//
 
-void draw_message_box_second_row(String text){
-  tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
-  draw_text(text, 0, 67, 2);
-}
-
-void draw_name(String name){
-  draw_text(name, 0, 0, 2);
-}
-
-void draw_stunned(){
-  tft.fillTriangle(132, 109, 126, 123, 130, 123, TFT_YELLOW);
-  tft.fillTriangle(130, 119, 134, 119, 128, 133, TFT_YELLOW);
-}
-
-void draw_shield(){
-  tft.fillTriangle(178,116,190,108,202,116,TFT_BLUE);
-  tft.fillTriangle(178,116,202,116,190,132,TFT_BLUE);
-
-  tft.fillTriangle(182,116,190,112,198,116,TFT_DARKGREY);
-  tft.fillTriangle(182,116,198,116,190,128,TFT_DARKGREY);
-}
-
-void write_shield_timer(String time){
-  // Clear the timer area
-  tft.fillRect(210,120,25,25,TFT_BLACK);
-
-  // Rewrite timer
-  draw_text(time, 210, 120, 2);
-}
-
-void draw_heart_row(int amount) {
-  //Clear current heart row
-  tft.fillRect(0,105,120,120,TFT_BLACK);
-
-  if (amount > 4) amount = 4;
-
-  for (int i = 0; i < amount; i++) {
-    int x = i * 27;
-    tft.fillCircle(10 + x, 120, 6, TFT_RED);
-    tft.fillCircle(22 + x, 120, 6, TFT_RED);
-    tft.fillTriangle(4 + x, 120, 28 + x, 120, 16 + x, 132, TFT_RED);
-  }
-}
-
-void write_stunned_timer(String time){
-  // Clear the timer area
-  tft.fillRect(140,120,25,25,TFT_BLACK);
-
-  // Rewrite timer
-  draw_text(time, 140, 120, 2); 
-}
-
-void clear_stunned_area(){
-  // Clear the timer area
-  tft.fillRect(140,120,25,25,TFT_BLACK);
-
-  // Clear stunned icon area
-  tft.fillRect(120,105,30,30,TFT_BLACK);
-}
-
-void clear_shield_area(){
-  // Clear the timer area
-  tft.fillRect(210,120,25,25,TFT_BLACK);
-
-  // Clear stunned icon area
-  tft.fillRect(178, 108, 25, 25, TFT_BLACK);
-}
-
-void check_timers() {
-  // current second since boot
-  int curr_sec = millis() / 1000;
-
-  // only update once per second
-  if (curr_sec != last_sec) {
-    last_sec = curr_sec;
-
-    // --- Handle stunned timer ---
-    if (remaining_stun_time > 0) {
-      if (stunned) {
-        write_stunned_timer(String(remaining_stun_time));
-        remaining_stun_time--;
-      }
-    } else {
-      clear_stunned_area();
-      if (stunned) {
-        draw_message_box_first_row("You're un-stunned!");
-        buzzVibrator(250, 2);
-      }
-      stunned = false;
-    }
-
-    // --- Handle shield timer ---
-    if (remaining_shield_time > 0) {
-      if (shield) {
-        write_shield_timer(String(remaining_shield_time));
-        remaining_shield_time--;
-      }
-    } else {
-      clear_shield_area();
-      if (shield){
-        draw_message_box_second_row("Shield disabled!");
-        buzzVibrator(250, 2);
-      }
-      shield = false;
-    }
-  }
-}
-
-void spell_recognizing_sequence(){
-  if (stunned){
-    clearSpellChecker();
-    return;
-  }
-  if (listCount && !listening){ // Movement detected while button was pressed, and button is now released
-    SpellResults spell = checkThroughSpells();
-    if (spell.name != "None"){
-      doSpell(spell);
-      // LED timer here
-      LED_start_time = millis();
-      LED_on = true;
-    }
-    else{
-      draw_message_box_first_row("Spell not recognized");
-      draw_message_box_second_row(" ");
-      buzzVibrator(750, 1);
-    }
-    clearSpellChecker();
-  }
+void setupMPU() {
+  writeRegister(PWR_MGMT_1, 0x00);   // wake up sensor
+  delay(50);
+  writeRegister(0x1A, 3);            // DLPF ~44 Hz
+  writeRegister(0x1B, 3 << 3);       // gyro ±2000 dps
+  writeRegister(0x1C, 2 << 3);       // accel ±8g
+  delay(50);
 }
 
 void check_movements(){
@@ -474,142 +356,6 @@ void check_movements(){
   }
 }
 
-void getCharacterSpell(){
-  for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
-    if (self_name == characterSpells[i].wizard_name){
-      characterSpell.name = characterSpells[i].name;
-      characterSpell.length = characterSpells[i].length;
-      for(int j = 0; j < 4; j++) characterSpell.moves[j] = characterSpells[i].moves[j];
-      for(int j = 0; j < 3; j++) characterSpell.colors[j] = characterSpells[i].colors[j];
-      for(int j = 0; j < 6; j++) characterSpell.effects[j] = characterSpells[i].effects[j];
-      characterSpell.wizard_name = characterSpells[i].wizard_name;
-    }
-  }
-}
-
-void buzzVibrator(int duration, int times){
-  for (int i = 0; i < times; i++) {
-    // Turn motor ON
-    digitalWrite(motorPin, HIGH);
-    delay(duration);  // keep on for 1 second
-
-    // Turn motor OFF
-    digitalWrite(motorPin, LOW);
-    delay(duration);  // keep off for 1 second
-  }
-}
-
-void clearSpellChecker(){
-  listCount = 0;       
-}
-
-void addToSpellChecker(String spell){
-  spellChecker[listCount] = spell;
-  listCount++;
-}
-
-SpellResults checkThroughSpells() {
-  SpellResults result;
-  result.name = "None"; // default
-  result.red = result.green = result.blue = 0;
-  result.self_shield = result.self_stun = result.self_life =
-  result.others_shield = result.others_stun = result.others_life = 0;
-
-  // --- check normal spells ---
-  for (int i = 0; i < NUM_SPELLS; i++) {
-    if (listCount != spells[i].length) continue;
-
-    bool equals = true;
-    for (int j = 0; j < spells[i].length; j++) {
-      if (spellChecker[j] != spells[i].moves[j]) {
-        equals = false;
-        break;
-      }
-    }
-
-    if (equals) {
-      result.name = spells[i].name;
-      result.red   = spells[i].colors[0];
-      result.green = spells[i].colors[1];
-      result.blue  = spells[i].colors[2];
-
-      result.self_shield   = spells[i].effects[0];
-      result.self_stun  = spells[i].effects[1];
-      result.self_life     = spells[i].effects[2];
-      result.others_shield = spells[i].effects[3];
-      result.others_stun= spells[i].effects[4];
-      result.others_life   = spells[i].effects[5];
-
-      return result;
-    }
-}
-  // --- check character spell explicitly ---
-  if (listCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
-    result.name = characterSpell.name;
-    result.red   = characterSpell.colors[0];
-    result.green = characterSpell.colors[1];
-    result.blue  = characterSpell.colors[2];
-
-    result.self_shield   = characterSpell.effects[0];
-    result.self_stun  = characterSpell.effects[1];
-    result.self_life     = characterSpell.effects[2];
-    result.others_shield = characterSpell.effects[3];
-    result.others_stun= characterSpell.effects[4];
-    result.others_life   = characterSpell.effects[5];
-
-    return result;
-  }
-  return result; // default "None"
-}
-
-void doSpell(SpellResults spell){
-  if (last_spell == spell.name){
-    draw_message_box_first_row("Can't repeat spell");
-    draw_message_box_second_row(" ");
-    buzzVibrator(750, 1);
-    return;
-  }
-  last_spell = spell.name;
-  draw_message_box_first_row(spell.name);
-
-  control_LED(spell.red, spell.green, spell.blue);
-
-  buzzVibrator(250, 2);
-
-  if (spell.self_shield) handle_self_shield(spell.self_shield);
-  if (spell.self_stun) handle_self_stun(spell.self_stun);
-  if (spell.self_life) handle_self_life(spell.self_life);
-  
-  String spell_to_send = spell.name;
-  spell_to_send.trim();
-  spell_to_send.toCharArray(message, sizeof(message));
-  // Send spell to any nearby wands using ESP-NOW
-  esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
-}
-
-void handle_self_shield(int time){
-  draw_shield(); 
-  shield = true;
-  remaining_shield_time = time;
-}
-
-void handle_self_stun(int time){
-  draw_stunned(); 
-  stunned = true;
-  remaining_stun_time = time;
-}
-
-void handle_self_life(int amount){
-  lives += amount;
-  if (lives > 4){
-    lives = 4;
-  }
-  if (lives <= 0){
-    // TODO: Dead logic here
-  }
-  draw_heart_row(lives);
-}
-
 void writeRegister(uint8_t reg, uint8_t val) {
   Wire.beginTransmission(MPU_ADDR);
   Wire.write(reg);
@@ -632,17 +378,286 @@ int16_t toInt16(uint8_t hi, uint8_t lo) {
   return (int16_t)((hi << 8) | lo);
 }
 
-void setupMPU() {
-  writeRegister(PWR_MGMT_1, 0x00);   // wake up sensor
-  delay(50);
-  writeRegister(0x1A, 3);            // DLPF ~44 Hz
-  writeRegister(0x1B, 3 << 3);       // gyro ±2000 dps
-  writeRegister(0x1C, 2 << 3);       // accel ±8g
-  delay(50);
+//--- Spell Functions ---//
+
+void spell_recognizing_sequence(){
+  if (stunned){
+    clearSpellChecker();
+    return;
+  }
+  if (listCount && !listening){ // Movement detected while button was pressed, and button is now released
+    SpellResults spell = checkThroughSpells();
+    if (spell.name != "None"){
+      doSpell(spell);
+      // LED timer here
+      LED_start_time = millis();
+      LED_on = true;
+    }
+    else{
+      draw_message_box_first_row("Spell not recognized");
+      draw_message_box_second_row(" ");
+      buzzVibrator(750, 1);
+    }
+    clearSpellChecker();
+  }
+}
+
+void getCharacterSpell(){
+  for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
+    if (self_name == characterSpells[i].wizard_name){
+      characterSpell.name = characterSpells[i].name;
+      characterSpell.length = characterSpells[i].length;
+      for(int j = 0; j < 4; j++) characterSpell.moves[j] = characterSpells[i].moves[j];
+      for(int j = 0; j < 3; j++) characterSpell.colors[j] = characterSpells[i].colors[j];
+      for(int j = 0; j < 6; j++) characterSpell.effects[j] = characterSpells[i].effects[j];
+      characterSpell.wizard_name = characterSpells[i].wizard_name;
+    }
+  }
+}
+
+void clearSpellChecker(){
+  listCount = 0;       
+}
+
+void addToSpellChecker(String spell){
+  spellChecker[listCount] = spell;
+  listCount++;
+}
+
+SpellResults checkThroughSpells() {
+  SpellResults result;
+  result.name = "None"; // default
+  result.red = result.green = result.blue = 0;
+  result.self_shield = result.self_stun = result.self_points =
+  result.others_shield = result.others_stun = result.others_points = 0;
+
+  // --- check normal spells ---
+  for (int i = 0; i < NUM_SPELLS; i++) {
+    if (listCount != spells[i].length) continue;
+
+    bool equals = true;
+    for (int j = 0; j < spells[i].length; j++) {
+      if (spellChecker[j] != spells[i].moves[j]) {
+        equals = false;
+        break;
+      }
+    }
+
+    if (equals) {
+      result.name = spells[i].name;
+      result.red   = spells[i].colors[0];
+      result.green = spells[i].colors[1];
+      result.blue  = spells[i].colors[2];
+
+      result.self_shield   = spells[i].effects[0];
+      result.self_stun  = spells[i].effects[1];
+      result.self_points     = spells[i].effects[2];
+      result.others_shield = spells[i].effects[3];
+      result.others_stun= spells[i].effects[4];
+      result.others_points   = spells[i].effects[5];
+
+      return result;
+    }
+}
+  // --- check character spell explicitly ---
+  if (listCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
+    result.name = characterSpell.name;
+    result.red   = characterSpell.colors[0];
+    result.green = characterSpell.colors[1];
+    result.blue  = characterSpell.colors[2];
+
+    result.self_shield   = characterSpell.effects[0];
+    result.self_stun  = characterSpell.effects[1];
+    result.self_points     = characterSpell.effects[2];
+    result.others_shield = characterSpell.effects[3];
+    result.others_stun= characterSpell.effects[4];
+    result.others_points   = characterSpell.effects[5];
+
+    return result;
+  }
+  return result; // default "None"
+}
+
+void doSpell(SpellResults spell){
+  if (last_spell == spell.name){
+    draw_message_box_first_row("Can't repeat spell");
+    draw_message_box_second_row(" ");
+    buzzVibrator(750, 1);
+    return;
+  }
+  last_spell = spell.name;
+  draw_message_box_first_row(spell.name);
+
+  control_LED(spell.red, spell.green, spell.blue);
+
+  buzzVibrator(250, 2);
+
+  if (spell.self_shield) handle_self_shield(spell.self_shield);
+  if (spell.self_stun) handle_self_stun(spell.self_stun);
+  if (spell.self_points) handle_self_points(spell.self_points);
+  
+  String spell_to_send = spell.name;
+  spell_to_send.trim();
+  spell_to_send.toCharArray(message, sizeof(message));
+  // Send spell to any nearby wands using ESP-NOW
+  esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
+}
+
+
+//--- Effects Functions ---//
+
+void check_timers() {
+  // current second since boot
+  int curr_sec = millis() / 1000;
+
+  // only update once per second
+  if (curr_sec != last_sec) {
+    last_sec = curr_sec;
+
+    // --- Handle stunned timer ---
+    if (remaining_stun_time > 0) {
+      if (stunned) {
+        write_stunned_timer(String(remaining_stun_time));
+        remaining_stun_time--;
+      }
+    } else {
+      clear_stunned_area();
+      if (stunned) {
+        draw_message_box_first_row("You're un-stunned!");
+        buzzVibrator(250, 2);
+      }
+      stunned = false;
+    }
+
+    // --- Handle shield timer ---
+    if (remaining_shield_time > 0) {
+      if (shield) {
+        write_shield_timer(String(remaining_shield_time));
+        remaining_shield_time--;
+      }
+    } else {
+      clear_shield_area();
+      if (shield){
+        draw_message_box_second_row("Shield disabled!");
+        buzzVibrator(250, 2);
+      }
+      shield = false;
+    }
+  }
+}
+
+void buzzVibrator(int duration, int times){
+  for (int i = 0; i < times; i++) {
+    // Turn motor ON
+    digitalWrite(motorPin, HIGH);
+    delay(duration);  // keep on for 1 second
+
+    // Turn motor OFF
+    digitalWrite(motorPin, LOW);
+    delay(duration);  // keep off for 1 second
+  }
+}
+
+void handle_self_shield(int time){
+  draw_shield(); 
+  shield = true;
+  remaining_shield_time = time;
+}
+
+void handle_self_stun(int time){
+  draw_stunned(); 
+  stunned = true;
+  remaining_stun_time = time;
+}
+
+void handle_self_points(int amount){
+  Points += amount;
+  update_points_print();
 }
 
 void control_LED(int redValue, int greenValue, int blueValue){
   analogWrite(RED, redValue);
   analogWrite(GREEN, greenValue);
   analogWrite(BLUE, blueValue);
+}
+
+
+//--- Drawing Functions ---//
+
+void draw_text(String text, int x_offset, int y_offset, int text_size){
+  tft.setTextSize(text_size);
+  tft.drawString(text, x_offset, y_offset);
+}
+
+void draw_message_box_first_row(String text){
+  tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
+  draw_text(text, 0, 47, 2);
+}
+
+void draw_message_box_second_row(String text){
+  tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
+  draw_text(text, 0, 67, 2);
+}
+
+void draw_name(String name){
+  draw_text(name, 0, 0, 2);
+}
+
+void draw_stunned(){
+  tft.fillTriangle(132, 109, 126, 123, 130, 123, TFT_YELLOW);
+  tft.fillTriangle(130, 119, 134, 119, 128, 133, TFT_YELLOW);
+}
+
+void draw_shield(){
+  tft.fillTriangle(178,116,190,108,202,116,TFT_BLUE);
+  tft.fillTriangle(178,116,202,116,190,132,TFT_BLUE);
+
+  tft.fillTriangle(182,116,190,112,198,116,TFT_DARKGREY);
+  tft.fillTriangle(182,116,198,116,190,128,TFT_DARKGREY);
+}
+
+void write_shield_timer(String time){
+  // Clear the timer area
+  tft.fillRect(210,120,25,25,TFT_BLACK);
+
+  // Rewrite timer
+  draw_text(time, 210, 120, 2);
+}
+
+void draw_heart_icon() {
+  tft.fillCircle(10, 100, 6, TFT_RED);
+  tft.fillCircle(22, 100, 6, TFT_RED);
+  tft.fillTriangle(4, 100, 28, 100, 16, 112, TFT_RED);
+}
+
+void update_points_print(){
+  // Clear the game timer
+  tft.fillRect(35,95,240,15,TFT_BLACK);
+
+  // Rewrite game timer
+  draw_text(String(Points), 35, 95, 2);
+}
+
+void write_stunned_timer(String time){
+  // Clear the timer area
+  tft.fillRect(140,120,25,25,TFT_BLACK);
+
+  // Rewrite timer
+  draw_text(time, 140, 120, 2); 
+}
+
+void clear_stunned_area(){
+  // Clear the timer area
+  tft.fillRect(140,120,25,25,TFT_BLACK);
+
+  // Clear stunned icon area
+  tft.fillRect(120,105,30,30,TFT_BLACK);
+}
+
+void clear_shield_area(){
+  // Clear the timer area
+  tft.fillRect(210,120,25,25,TFT_BLACK);
+
+  // Clear stunned icon area
+  tft.fillRect(178, 108, 25, 25, TFT_BLACK);
 }
