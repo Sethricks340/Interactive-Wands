@@ -10,6 +10,10 @@ uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 esp_now_peer_info_t peerInfo;
 
+int totalSeconds;
+
+int timer = 0;
+
 void setup() {
   tft.init();
   tft.setRotation(1);
@@ -52,6 +56,9 @@ void loop() {
      with ESP_NOW every 10 seconds with the time remaining for late arrivals.
      (wands will filter if they don't need it) */
 
+  // printTimeLeft()
+  // Send_ESP_Now_String("base:totalSeconds")
+
   /* Once time is over, return to main menu. No other action needed. 
     (Wands keep track of time on their own)*/
   // Show_menu();
@@ -67,9 +74,20 @@ void Send_ESP_Now_String(String text){
 
 void Show_menu(){
   // options: 
-      // 1 min
-      // 3 min
-      // 5 min
-      // 9 3/4 min
+      // 1 min (60s)
+      // 3 min (180s)
+      // 5 min (300s)
   // continue
 }
+
+void printTimeLeft() {
+  int minutes = totalSeconds / 60;
+  int seconds = totalSeconds % 60;
+
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%d:%02d", minutes, seconds);
+}
+
+
+
+

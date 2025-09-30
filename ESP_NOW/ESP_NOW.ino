@@ -7,7 +7,9 @@
 
 // TODO: 
 //    Get rid of SpellEffects struct (just use spell)    
-//    Start game logic
+//    Start game logic - waiting for message "base:totalSeconds"
+//    Create waiting screen (animation?)
+//    Create clock icon w/ clock icon 
 
 #include <Wire.h>
 #include <math.h>
