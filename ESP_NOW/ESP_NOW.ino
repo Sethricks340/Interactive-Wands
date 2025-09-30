@@ -64,7 +64,7 @@ int remaining_shield_time = 0;
 int LED_on = false;
 int LED_start_time = 3;
 int LED_timeout = 3000; // 3 seconds (3000ms)
-volatile long Points = 3; // Total Points in this game
+volatile long Points = 0; // Total Points in this game
 
 const int threshold = 800;
 
@@ -96,22 +96,22 @@ struct SpellResults {
 Spell spells[] = {
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
   {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
-  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -1, 3, 0, -1},   "None"},       // Redish-orange
-  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 1, 3, 0, 0},    "None"},       // Yellow
-  {"Protego Maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 0, 10, 0, 0},  "None"},       // Blue
-  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 1, 3, 0, -1},   "None"},       // Darker Pink
-  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -1},    "None"},       // Lighter Pink
-  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 10, -1, 3, 0, -1}, "None"},       // Teal
+  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -50, 3, 0, -100},   "None"},       // Redish-orange
+  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 50, 0, 0, 50},    "None"},       // Yellow
+  {"Protego Maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 100, 10, 0, 100},  "None"},       // Blue
+  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 100, 3, 0, -100},   "None"},       // Darker Pink
+  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -100},    "None"},       // Lighter Pink
+  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 10, -75, 3, 0, -100}, "None"},       // Teal
 };
 
 Spell characterSpells[] = {
-  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly Weasley"},       // Yellow-green1
-  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {15, 3, 1, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
-  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione Granger"},    // Coral green
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -2},   "Lord Voldemort"},      // Green
-  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron Weasley"},         // Greenish-blue
-  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 1, 0, 0, 1},    "Luna Lovegood"},       // Sky blue
-  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 1, 0, 0, 0},   "Harry Potter"},        // White
+  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, 10, 3, 0, -100},   "Molly Weasley"},       // Yellow-green1
+  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {15, 3, 10, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
+  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 75, -1, 0, 0},    "Hermione Granger"},    // Coral green
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -200, 3, 0, -200},   "Lord Voldemort"},      // Green
+  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -100, 3, 10, -100},  "Ron Weasley"},         // Greenish-blue
+  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 50, 0, 0, 100},    "Luna Lovegood"},       // Sky blue
+  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 60, 0, 0, 0},   "Harry Potter"},        // White
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -179,11 +179,6 @@ void setup() {
   }
 
   draw_heart_icon();
-  Points = 100000;
-  draw_shield();
-  draw_stunned();
-  draw_message_box_first_row("This is a test. Yay!");
-  draw_message_box_second_row("This is the second.");
   update_points_print();
 
   delay(100);
@@ -237,8 +232,8 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, message) == 0){   
-      draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(message);
+      // draw_message_box_first_row("Hit by:");
+      draw_message_box_second_row(String(message) + "!!");
       buzzVibrator(250, 2);
       if (spells[i].effects[3]) handle_self_shield(spells[i].effects[3]);
       if (spells[i].effects[4]) handle_self_stun(spells[i].effects[4]);
@@ -249,8 +244,8 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 
   for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
     if (strcmp(characterSpells[i].name, message) == 0){
-      draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(message);
+      // draw_message_box_first_row("Hit by:");
+      draw_message_box_second_row(String(message) + "!!");
       buzzVibrator(250, 2);
       if (characterSpells[i].effects[3]) handle_self_shield(characterSpells[i].effects[3]);
       if (characterSpells[i].effects[4]) handle_self_stun(characterSpells[i].effects[4]);
@@ -260,8 +255,11 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   }
 }
 
-void Send_ESP_Now_String(){
-
+void Send_ESP_Now_String(String text){
+  text.trim();
+  text.toCharArray(message, sizeof(message));
+  // Send spell to any nearby wands using ESP-NOW
+  esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
 }
 
 //--- MPU Functions ---//
@@ -497,10 +495,7 @@ void doSpell(SpellResults spell){
   if (spell.self_points) handle_self_points(spell.self_points);
   
   String spell_to_send = spell.name;
-  spell_to_send.trim();
-  spell_to_send.toCharArray(message, sizeof(message));
-  // Send spell to any nearby wands using ESP-NOW
-  esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
+  Send_ESP_Now_String(spell_to_send);
 }
 
 
@@ -572,6 +567,7 @@ void handle_self_stun(int time){
 
 void handle_self_points(int amount){
   Points += amount;
+  if (Points < 0) Points = 0;
   update_points_print();
 }
 
