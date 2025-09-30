@@ -86,6 +86,8 @@ void printTimeLeft() {
 
   char buffer[16];
   snprintf(buffer, sizeof(buffer), "%d:%02d", minutes, seconds);
+
+  // Add TFT logic
 }
 
 

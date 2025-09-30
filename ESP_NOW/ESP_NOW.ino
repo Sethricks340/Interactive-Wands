@@ -9,7 +9,7 @@
 //    Get rid of SpellEffects struct (just use spell)    
 //    Start game logic - waiting for message "base:totalSeconds"
 //    Create waiting screen (animation?)
-//    Create clock icon w/ clock icon 
+//    Create clock icon w/ game time left
 
 #include <Wire.h>
 #include <math.h>
@@ -136,6 +136,9 @@ String last_spell = "";
 
 int motorPin = 14;
 
+bool activeGame = false;
+int remainingGameTime = 0;
+
 void setup() {
   tft.init();
   tft.setRotation(1);
@@ -193,6 +196,8 @@ void setup() {
 }
 
 void loop() {
+  if (!activeGame) return;
+
   // If not enough time has passed (less than dt), skip this iteration
   static unsigned long lastTime = micros();
   unsigned long now = micros();
@@ -210,7 +215,7 @@ void loop() {
   lastTime = now;
 
   check_movements();
-  if (stunned || shield){
+  if (stunned || shield){ // TODO: clock timer here too
     check_timers();
   }
 }
@@ -219,6 +224,26 @@ void loop() {
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
+  if (!activeGame) {
+    if (strncmp(message, "base", 4) != 0) {
+        return;
+    }
+
+    const char *colon = strchr(message, ':');  // find first ':'
+    if (colon != NULL) {
+        int seconds = atoi(colon + 1);  // convert the part after ':' to int
+        remainingGameTime = seconds;
+        activeGame = true;
+
+        // Show start game screen here, before loop has a chance to wipe it
+        // Countdown timer?
+        // Buzzer
+        // Small delay before game starts
+        // Helper setup function to print player name, heart icon, and clock icon
+
+    }
+  }
+  
   // Spell has no effect if your shield is on
   if (shield){
     return;
@@ -540,6 +565,10 @@ void check_timers() {
       }
       shield = false;
     }
+
+    // TODO:  
+    // --- Handle remainingSeconds timer ---
+
   }
 }
 
