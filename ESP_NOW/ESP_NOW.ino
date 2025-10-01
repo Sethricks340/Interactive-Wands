@@ -215,34 +215,36 @@ void loop() {
   lastTime = now;
 
   check_movements();
-  if (stunned || shield){ // TODO: clock timer here too
-    check_timers();
-  }
+  check_timers(); // TODO: clock timer here too
+  // if (stunned || shield){ // TODO: clock timer here too
+  //   check_timers();
+  // }
 }
 
 //--- ESP-NOW Functions ---//
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
-  if (!activeGame) {
-    if (strncmp(message, "base", 4) != 0) {
-        return;
+    // TODO: Doesn't seem to be receiving the base station data correcty
+    // Copy data to your buffer first
+    memcpy(message, incomingData, len);
+    message[len] = '\0'; // null terminate
+
+    if (!activeGame) {
+        if (strncmp(message, "base", 4) != 0) {
+            return;
+        }
+
+        const char *colon = strchr(message, ':');  // find first ':'
+        if (colon != NULL) {
+            int seconds = atoi(colon + 1);  // convert the part after ':' to int
+            remainingGameTime = seconds;
+            activeGame = true;
+
+            tft.fillScreen(TFT_BLACK); // optional, clear screen
+            draw_text(String(seconds), 120, 68, 4); 
+        }
     }
-
-    const char *colon = strchr(message, ':');  // find first ':'
-    if (colon != NULL) {
-        int seconds = atoi(colon + 1);  // convert the part after ':' to int
-        remainingGameTime = seconds;
-        activeGame = true;
-
-        // Show start game screen here, before loop has a chance to wipe it
-        // Countdown timer?
-        // Buzzer
-        // Small delay before game starts
-        // Helper setup function to print player name, heart icon, and clock icon
-
-    }
-  }
   
   // Spell has no effect if your shield is on
   if (shield){
@@ -252,8 +254,8 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   const uint8_t *mac = info->src_addr;   // <- new way to get sender MAC
 
   // Copy data to your buffer
-  memcpy(message, incomingData, len);
-  message[len] = '\0'; // null terminate
+  // memcpy(message, incomingData, len);
+  // message[len] = '\0'; // null terminate
 
   // TODO: Make more exciting hit animation?
 
