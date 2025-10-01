@@ -7,9 +7,7 @@
 
 // TODO: 
 //    Get rid of SpellEffects struct (just use spell)    
-//    Start game logic - waiting for message "base:totalSeconds"
-//    Create waiting screen (animation?)
-//    Create clock icon w/ game time left
+//    Start game logic
 
 #include <Wire.h>
 #include <math.h>
@@ -98,22 +96,22 @@ struct SpellResults {
 Spell spells[] = {
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
   {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
-  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -50, 3, 0, -100},   "None"},       // Redish-orange
-  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 50, 0, 0, 50},    "None"},       // Yellow
-  {"Protego Maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 100, 10, 0, 100},  "None"},       // Blue
-  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 100, 3, 0, -100},   "None"},       // Darker Pink
-  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -100},    "None"},       // Lighter Pink
-  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 10, -75, 3, 0, -100}, "None"},       // Teal
+  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -1, 3, 0, -1},   "None"},       // Redish-orange
+  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 1, 3, 0, 0},    "None"},       // Yellow
+  {"Protego Maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 0, 10, 0, 0},  "None"},       // Blue
+  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 1, 3, 0, -1},   "None"},       // Darker Pink
+  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -1},    "None"},       // Lighter Pink
+  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 10, -1, 3, 0, -1}, "None"},       // Teal
 };
 
 Spell characterSpells[] = {
-  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, 10, 3, 0, -100},   "Molly Weasley"},       // Yellow-green1
-  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {15, 3, 10, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
-  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 75, -1, 0, 0},    "Hermione Granger"},    // Coral green
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -200, 3, 0, -200},   "Lord Voldemort"},      // Green
-  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -100, 3, 10, -100},  "Ron Weasley"},         // Greenish-blue
-  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 50, 0, 0, 100},    "Luna Lovegood"},       // Sky blue
-  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 60, 0, 0, 0},   "Harry Potter"},        // White
+  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly Weasley"},       // Yellow-green1
+  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {15, 3, 1, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
+  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione Granger"},    // Coral green
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -2},   "Lord Voldemort"},      // Green
+  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron Weasley"},         // Greenish-blue
+  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 1, 0, 0, 1},    "Luna Lovegood"},       // Sky blue
+  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 1, 0, 0, 0},   "Harry Potter"},        // White
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -135,9 +133,6 @@ Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"
 String last_spell = "";
 
 int motorPin = 14;
-
-bool activeGame = false;
-int remainingGameTime = 0;
 
 void setup() {
   tft.init();
@@ -196,8 +191,6 @@ void setup() {
 }
 
 void loop() {
-  if (!activeGame) return;
-
   // If not enough time has passed (less than dt), skip this iteration
   static unsigned long lastTime = micros();
   unsigned long now = micros();
@@ -215,37 +208,15 @@ void loop() {
   lastTime = now;
 
   check_movements();
-  check_timers(); // TODO: clock timer here too
-  // if (stunned || shield){ // TODO: clock timer here too
-  //   check_timers();
-  // }
+  if (stunned || shield){
+    check_timers();
+  }
 }
 
 //--- ESP-NOW Functions ---//
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
-    // TODO: Doesn't seem to be receiving the base station data correcty
-    // Copy data to your buffer first
-    memcpy(message, incomingData, len);
-    message[len] = '\0'; // null terminate
-
-    if (!activeGame) {
-        if (strncmp(message, "base", 4) != 0) {
-            return;
-        }
-
-        const char *colon = strchr(message, ':');  // find first ':'
-        if (colon != NULL) {
-            int seconds = atoi(colon + 1);  // convert the part after ':' to int
-            remainingGameTime = seconds;
-            activeGame = true;
-
-            tft.fillScreen(TFT_BLACK); // optional, clear screen
-            draw_text(String(seconds), 120, 68, 4); 
-        }
-    }
-  
   // Spell has no effect if your shield is on
   if (shield){
     return;
@@ -254,15 +225,15 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   const uint8_t *mac = info->src_addr;   // <- new way to get sender MAC
 
   // Copy data to your buffer
-  // memcpy(message, incomingData, len);
-  // message[len] = '\0'; // null terminate
+  memcpy(message, incomingData, len);
+  message[len] = '\0'; // null terminate
 
   // TODO: Make more exciting hit animation?
 
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, message) == 0){   
-      // draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(String(message) + "!!");
+      draw_message_box_first_row("Hit by:");
+      draw_message_box_second_row(message);
       buzzVibrator(250, 2);
       if (spells[i].effects[3]) handle_self_shield(spells[i].effects[3]);
       if (spells[i].effects[4]) handle_self_stun(spells[i].effects[4]);
@@ -273,8 +244,8 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 
   for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
     if (strcmp(characterSpells[i].name, message) == 0){
-      // draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(String(message) + "!!");
+      draw_message_box_first_row("Hit by:");
+      draw_message_box_second_row(message);
       buzzVibrator(250, 2);
       if (characterSpells[i].effects[3]) handle_self_shield(characterSpells[i].effects[3]);
       if (characterSpells[i].effects[4]) handle_self_stun(characterSpells[i].effects[4]);
@@ -282,13 +253,6 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
       return;
     }
   }
-}
-
-void Send_ESP_Now_String(String text){
-  text.trim();
-  text.toCharArray(message, sizeof(message));
-  // Send spell to any nearby wands using ESP-NOW
-  esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
 }
 
 //--- MPU Functions ---//
@@ -524,7 +488,10 @@ void doSpell(SpellResults spell){
   if (spell.self_points) handle_self_points(spell.self_points);
   
   String spell_to_send = spell.name;
-  Send_ESP_Now_String(spell_to_send);
+  spell_to_send.trim();
+  spell_to_send.toCharArray(message, sizeof(message));
+  // Send spell to any nearby wands using ESP-NOW
+  esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
 }
 
 
@@ -567,10 +534,6 @@ void check_timers() {
       }
       shield = false;
     }
-
-    // TODO:  
-    // --- Handle remainingSeconds timer ---
-
   }
 }
 
@@ -600,7 +563,6 @@ void handle_self_stun(int time){
 
 void handle_self_points(int amount){
   Points += amount;
-  if (Points < 0) Points = 0;
   update_points_print();
 }
 
