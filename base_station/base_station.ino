@@ -88,8 +88,6 @@ void loop() {
       if (last_ESP_send - totalSeconds >= 10){
         last_ESP_send = totalSeconds;
         Send_ESP_Now_String("base:" + String(totalSeconds));
-        draw_text("base:" + String(totalSeconds), 0, 0, 2); //TODO: remove this
-        delay(1000); //TODO: remove this
       }
       handleTimer();
       last_sec = curr_sec;
