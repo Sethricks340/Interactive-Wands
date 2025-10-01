@@ -16,6 +16,8 @@
 #include <TFT_eSPI.h>
 #include <SPI.h>
 
+bool game_started = false;
+
 TFT_eSPI tft = TFT_eSPI();
 // TFT_eSprite sprite = TFT_eSprite(&tft);  // Create a sprite buffer
 
@@ -46,6 +48,9 @@ const float GYRO_LSB_PER_DPS = 16.4;   // ±2000 dps
 
 // Sampling
 const float dt = 0.01; // 100 Hz -> 10ms
+int waiting_timer = 3000; // in ms
+unsigned long last_waiting_update = 0;
+int last_random = 0;
 
 volatile bool RCW = false;  // Roll Clockwise
 volatile bool RCCW = false; // Roll Counter-Clockwise
@@ -93,6 +98,25 @@ struct SpellResults {
     int others_points;
 };
 
+String loading_messages[] = {
+  // Spaces added/deleted in strings for custom text wrapping. 
+  "Giving Dobby a sock...",
+  "Running from Aragog...",
+  "Sending an   owl...",
+  "Fighting off Dementors...",
+  "Stirring a   potion...",
+  "Killing a    Basilisk...",          
+  "Making an    Unbreakable  Vow...",
+  "Eating a     chocolate    frog...",
+  "Waiting for  Hogwarts     letter...",
+  "Catching the Snitch...",
+  "Stealing a   dragon from  Gringotts...",
+  "Blowing up anAunt...",         
+  "Looking in   the Mirror ofErised...",
+  "Searching forHorcruxes...",
+  "Playing      Wizard's     Chess...",
+};
+
 Spell spells[] = {
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
   {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
@@ -138,6 +162,7 @@ void setup() {
   tft.init();
   tft.setRotation(1);
   tft.fillScreen(TFT_BLACK);
+  tft.setTextWrap(true);
 
   pinMode(32, OUTPUT);
   digitalWrite(32, HIGH);  // Backlight on
@@ -178,16 +203,10 @@ void setup() {
     return;
   }
 
-  draw_heart_icon();
-  update_points_print();
-
-  delay(100);
-
   control_LED(0, 0, 0); // LED off
   
   setupMPU();
   getCharacterSpell();
-  draw_name(self_name);
 }
 
 void loop() {
@@ -196,6 +215,14 @@ void loop() {
   unsigned long now = micros();
   float elapsed = (now - lastTime) / 1000000.0;
   if (elapsed < dt) return;
+
+  if (!game_started) {
+    if (millis() - last_waiting_update >= waiting_timer) {
+      draw_random_waiting_message();
+      last_waiting_update = millis();  // reset timer
+      return;
+    }
+  }
 
   listening = !digitalRead(buttonPin); // Low (false) means button pressed
 
@@ -225,15 +252,26 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   memcpy(message, incomingData, len);
   message[len] = '\0'; // null terminate
 
-  // TODO: remove this debug print
-  draw_message_box_first_row(message);
+  // If receiving a message from the base station for the first time
+  if (strncmp(message, "base:", 5) == 0 && !game_started){ 
+    game_started = true;
+    
+    // Do this all the first time to start the game
+    clear_screen();
+
+    // TODO: get time value and put it in the clock 
+    // Message in form base:number
+    String after = String(message).substring(5);
+    draw_message_box_first_row(after);
+    draw_heart_icon();
+    update_points_print();
+    draw_name(self_name);
+  }
 
   // Spell has no effect if your shield is on
   if (shield){
     return;
   }
-
-  // TODO: Make more exciting hit animation?
 
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, message) == 0){   
@@ -585,6 +623,10 @@ void draw_text(String text, int x_offset, int y_offset, int text_size){
   tft.drawString(text, x_offset, y_offset);
 }
 
+void clear_screen(){
+  tft.fillScreen(TFT_BLACK); // fills the entire screen with black
+}
+
 void draw_message_box_first_row(String text){
   tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
   draw_text(text, 0, 47, 2);
@@ -656,4 +698,15 @@ void clear_shield_area(){
 
   // Clear stunned icon area
   tft.fillRect(178, 108, 25, 25, TFT_BLACK);
+}
+
+void draw_random_waiting_message(){
+  int random_number = random(0, sizeof(loading_messages) / sizeof(loading_messages[0]));
+  while (random_number == last_random) return;
+  last_random = random_number;
+  clear_screen();
+  tft.setCursor(0, 47);     
+  tft.setTextSize(3);       
+  tft.setTextColor(TFT_WHITE, TFT_BLACK); 
+  tft.println(loading_messages[random_number]);        
 }
