@@ -217,16 +217,21 @@ void loop() {
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
-  // Spell has no effect if your shield is on
-  if (shield){
-    return;
-  }
+
   // If you want the MAC address:
   const uint8_t *mac = info->src_addr;   // <- new way to get sender MAC
 
   // Copy data to your buffer
   memcpy(message, incomingData, len);
   message[len] = '\0'; // null terminate
+
+  // TODO: remove this debug print
+  draw_message_box_first_row(message);
+
+  // Spell has no effect if your shield is on
+  if (shield){
+    return;
+  }
 
   // TODO: Make more exciting hit animation?
 
