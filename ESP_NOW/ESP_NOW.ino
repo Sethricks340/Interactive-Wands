@@ -157,6 +157,8 @@ Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"
 String last_spell = "";
 
 int motorPin = 14;
+String ESP_message = "";
+bool ESP_recv = false;
 
 void setup() {
   tft.init();
@@ -224,6 +226,8 @@ void loop() {
     }
   }
 
+  if (ESP_recv) in_loop_ESP_recv();
+
   listening = !digitalRead(buttonPin); // Low (false) means button pressed
 
   spell_recognizing_sequence();
@@ -244,6 +248,7 @@ void loop() {
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
+  if (ESP_recv) return;
 
   // If you want the MAC address:
   const uint8_t *mac = info->src_addr;   // <- new way to get sender MAC
@@ -252,8 +257,13 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   memcpy(message, incomingData, len);
   message[len] = '\0'; // null terminate
 
+  ESP_message = String(message);
+  ESP_recv = true;
+}
+
+void in_loop_ESP_recv(){
   // If receiving a message from the base station for the first time
-  if (strncmp(message, "base:", 5) == 0 && !game_started){ 
+  if (ESP_message.startsWith("base:") && !game_started) {
     game_started = true;
     
     // Do this all the first time to start the game
@@ -261,7 +271,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 
     // TODO: get time value and put it in the clock 
     // Message in form base:number
-    String after = String(message).substring(5);
+    String after = String(ESP_message).substring(5);
     draw_message_box_first_row(after);
     draw_heart_icon();
     update_points_print();
@@ -274,9 +284,9 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   }
 
   for (int i = 0; i < NUM_SPELLS; i++) {
-    if (strcmp(spells[i].name, message) == 0){   
+    if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
       draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(message);
+      draw_message_box_second_row(ESP_message);
       buzzVibrator(250, 2);
       if (spells[i].effects[3]) handle_self_shield(spells[i].effects[3]);
       if (spells[i].effects[4]) handle_self_stun(spells[i].effects[4]);
@@ -286,9 +296,9 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   }
 
   for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
-    if (strcmp(characterSpells[i].name, message) == 0){
+    if (strcmp(characterSpells[i].name, ESP_message.c_str()) == 0) {
       draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(message);
+      draw_message_box_second_row(ESP_message);
       buzzVibrator(250, 2);
       if (characterSpells[i].effects[3]) handle_self_shield(characterSpells[i].effects[3]);
       if (characterSpells[i].effects[4]) handle_self_stun(characterSpells[i].effects[4]);
@@ -296,6 +306,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
       return;
     }
   }
+  ESP_recv = false;
 }
 
 //--- MPU Functions ---//
