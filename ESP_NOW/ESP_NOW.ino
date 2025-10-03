@@ -8,6 +8,7 @@
 // TODO: 
 //    Get rid of SpellEffects struct (just use spell)    
 //    Make Buzz non-blocking
+//    Create filters for more complicated spell effects?
 
 #include <Wire.h>
 #include <math.h>
@@ -133,7 +134,7 @@ Spell characterSpells[] = {
   {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -50, 3, 0, -175},   "Molly Weasley"},       // Yellow-green1
   {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},   {15, 3, 25, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
   {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 50, 0, 0, 0},    "Hermione Granger"},    // Coral green
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -200, 3, 0, -200},   "Lord Voldemort"},      // Green
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -200, 0, 0, -200},   "Lord Voldemort"},      // Green
   {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -100, 0, 10, -100},  "Ron Weasley"},         // Greenish-blue
   {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 100, 0, 0, 100},    "Luna Lovegood"},       // Sky blue
   {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 100, 0, 0, 0},   "Harry Potter"},        // White
