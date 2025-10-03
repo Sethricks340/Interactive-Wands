@@ -66,6 +66,7 @@ volatile bool listening = false; // If the button is pressed
 int last_sec = 0;
 int remaining_stun_time = 0;
 int remaining_shield_time = 0;
+int remaining_game_time = 0;
 int LED_on = false;
 int LED_start_time = 3;
 int LED_timeout = 3000; // 3 seconds (3000ms)
@@ -218,15 +219,15 @@ void loop() {
   float elapsed = (now - lastTime) / 1000000.0;
   if (elapsed < dt) return;
 
+  if (ESP_recv) in_loop_ESP_recv();
+
   if (!game_started) {
     if (millis() - last_waiting_update >= waiting_timer) {
       draw_random_waiting_message(); // TODO: uncomment this
       last_waiting_update = millis();  // reset timer
-      return;
     }
+    return;
   }
-
-  if (ESP_recv) in_loop_ESP_recv();
 
   listening = !digitalRead(buttonPin); // Low (false) means button pressed
 
@@ -239,9 +240,7 @@ void loop() {
   lastTime = now;
 
   check_movements();
-  if (stunned || shield){
-    check_timers();
-  }
+  check_timers();
 }
 
 //--- ESP-NOW Functions ---//
@@ -272,11 +271,10 @@ void in_loop_ESP_recv(){
     // TODO: get time value and put it in the clock 
     // Message in form base:number
     String after = String(ESP_message).substring(5);
-    draw_message_box_first_row(after);
+    remaining_game_time = after.toInt();
     draw_heart_icon();
     update_points_print();
     draw_name(self_name);
-    draw_timer();
     draw_clock_icon();
   }
 
@@ -577,7 +575,7 @@ void check_timers() {
       stunned = false;
     }
 
-    // --- Handle shield timer ---
+    // --- Handle shield timer --- //
     if (remaining_shield_time > 0) {
       if (shield) {
         write_shield_timer(String(remaining_shield_time));
@@ -591,6 +589,12 @@ void check_timers() {
       }
       shield = false;
     }
+
+    // --- Handle shield timer --- //
+    if (remaining_game_time > 0) {
+      draw_timer(String(remaining_game_time));
+      remaining_game_time--;
+    } 
   }
 }
 
@@ -677,30 +681,29 @@ void write_shield_timer(String time){
 }
 
 void draw_heart_icon() {
-  tft.fillCircle(10, 100, 6, TFT_RED);
-  tft.fillCircle(22, 100, 6, TFT_RED);
-  tft.fillTriangle(4, 100, 28, 100, 16, 112, TFT_RED);
+  tft.fillCircle(10, 98, 6, TFT_RED);  
+  tft.fillCircle(22, 98, 6, TFT_RED);  
+  tft.fillTriangle(4, 98, 28, 98, 16, 110, TFT_RED);  
+}
+
+void update_points_print() {
+  // Clear the game timer
+  tft.fillRect(35, 93, 240, 15, TFT_BLACK);
+
+  // Rewrite game timer
+  draw_text(String(Points), 35, 93, 2);   
 }
 
 void draw_clock_icon() {
   tft.fillCircle(16, 124, 10, TFT_DARKGREY);
   tft.fillCircle(16, 124, 8, TFT_WHITE);
-
   tft.fillRect(16, 124, 8, 2, TFT_DARKGREY);
   tft.fillRect(16, 117, 2, 7, TFT_DARKGREY);
 }
 
-void draw_timer(){
+void draw_timer(String time){
   tft.fillRect(35,120,70,15,TFT_BLACK);
-  draw_text("10:00", 35, 120, 2);
-}
-
-void update_points_print(){
-  // Clear the game timer
-  tft.fillRect(35,95,240,15,TFT_BLACK);
-
-  // Rewrite game timer
-  draw_text(String(Points), 35, 95, 2);
+  draw_text(time, 35, 120, 2);
 }
 
 void write_stunned_timer(String time){
