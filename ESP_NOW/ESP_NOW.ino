@@ -131,7 +131,7 @@ Spell spells[] = {
 };
 
 Spell characterSpells[] = {
-  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -100, 3, 0, -100},   "Molly Weasley"},       // Yellow-green1
+  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -50, 3, 0, -175},   "Molly Weasley"},       // Yellow-green1
   {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},   {15, 3, 25, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
   {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 50, 0, 0, 0},    "Hermione Granger"},    // Coral green
   {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -200, 3, 0, -200},   "Lord Voldemort"},      // Green
@@ -586,7 +586,7 @@ void check_timers() {
       remaining_game_time--;
     } 
     else if (remaining_game_time <= 0){
-      ESP.restart(); //TODO: replace this with end screen logic
+      end_sequence();
     }
   }
 }
@@ -640,18 +640,12 @@ void clear_screen(){
 
 void start_sequence(){
   // Do this all the first time to start the game
-
   tft.fillScreen(TFT_GREEN);
-
-  // tft.setTextColor(TFT_BLACK); 
-  // tft.setTextSize(3);
-  // tft.drawString("START!", tft.width() / 2, 47);
-
   int16_t x = (tft.width() - tft.textWidth("START!")) / 2;
   int16_t y = 57;
   tft.setTextColor(TFT_BLACK, TFT_GREEN);
+  tft.setTextSize(3);
   tft.drawString("START!", x, y);
-
   buzzVibrator(250, 2);
 
   clear_screen();
@@ -664,6 +658,33 @@ void start_sequence(){
   update_points_print();
   draw_name(self_name);
   draw_clock_icon();
+}
+
+void end_sequence(){
+  // This sequence happens when the game timer runs out
+  tft.fillScreen(TFT_RED);
+  tft.setTextSize(3);
+  int16_t x = (tft.width() - tft.textWidth("GAME OVER!")) / 2;
+  int16_t y = 57;
+  tft.setTextColor(TFT_BLACK, TFT_RED);
+  tft.drawString("GAME OVER!", x, y);
+  buzzVibrator(250, 2);
+  print_score_screen();
+}
+
+void print_score_screen(){
+  clear_screen();
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setTextSize(3);
+  draw_name(self_name);
+  draw_message_box_first_row("Points: " + String(Points));
+  draw_message_box_second_row("(Press to Continue)");      
+
+  listening = !digitalRead(buttonPin); // Low (false) means button pressed
+  while(!listening){
+    listening = !digitalRead(buttonPin);
+  }
+  ESP.restart();
 }
 
 void draw_message_box_first_row(String text){
