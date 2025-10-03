@@ -117,6 +117,7 @@ String loading_messages[] = {
   "Playing      Wizard's     Chess...",
 };
 
+//TODO: Make the lives make more sense
 Spell spells[] = {
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
   {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
