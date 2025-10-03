@@ -7,7 +7,6 @@
 
 // TODO: 
 //    Get rid of SpellEffects struct (just use spell)    
-//    Create end game logic
 //    Make Buzz non-blocking
 
 #include <Wire.h>
