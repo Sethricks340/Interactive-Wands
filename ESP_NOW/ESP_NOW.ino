@@ -220,7 +220,7 @@ void loop() {
 
   if (!game_started) {
     if (millis() - last_waiting_update >= waiting_timer) {
-      draw_random_waiting_message();
+      draw_random_waiting_message(); // TODO: uncomment this
       last_waiting_update = millis();  // reset timer
       return;
     }
@@ -276,6 +276,8 @@ void in_loop_ESP_recv(){
     draw_heart_icon();
     update_points_print();
     draw_name(self_name);
+    draw_timer();
+    draw_clock_icon();
   }
 
   // Spell has no effect if your shield is on
@@ -307,6 +309,7 @@ void in_loop_ESP_recv(){
     }
   }
   ESP_recv = false;
+  ESP_message = "";
 }
 
 //--- MPU Functions ---//
@@ -503,7 +506,7 @@ SpellResults checkThroughSpells() {
 
       return result;
     }
-}
+  }
   // --- check character spell explicitly ---
   if (listCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
     result.name = characterSpell.name;
@@ -677,6 +680,19 @@ void draw_heart_icon() {
   tft.fillCircle(10, 100, 6, TFT_RED);
   tft.fillCircle(22, 100, 6, TFT_RED);
   tft.fillTriangle(4, 100, 28, 100, 16, 112, TFT_RED);
+}
+
+void draw_clock_icon() {
+  tft.fillCircle(16, 124, 10, TFT_DARKGREY);
+  tft.fillCircle(16, 124, 8, TFT_WHITE);
+
+  tft.fillRect(16, 124, 8, 2, TFT_DARKGREY);
+  tft.fillRect(16, 117, 2, 7, TFT_DARKGREY);
+}
+
+void draw_timer(){
+  tft.fillRect(35,120,70,15,TFT_BLACK);
+  draw_text("10:00", 35, 120, 2);
 }
 
 void update_points_print(){
