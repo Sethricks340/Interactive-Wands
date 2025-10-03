@@ -7,7 +7,6 @@
 
 // TODO: 
 //    Get rid of SpellEffects struct (just use spell)    
-//    Start game logic
 
 #include <Wire.h>
 #include <math.h>
@@ -223,7 +222,7 @@ void loop() {
 
   if (!game_started) {
     if (millis() - last_waiting_update >= waiting_timer) {
-      draw_random_waiting_message(); // TODO: uncomment this
+      draw_random_waiting_message(); 
       last_waiting_update = millis();  // reset timer
     }
     return;
@@ -268,7 +267,6 @@ void in_loop_ESP_recv(){
     // Do this all the first time to start the game
     clear_screen();
 
-    // TODO: get time value and put it in the clock 
     // Message in form base:number
     String after = String(ESP_message).substring(5);
     remaining_game_time = after.toInt();
@@ -276,6 +274,7 @@ void in_loop_ESP_recv(){
     update_points_print();
     draw_name(self_name);
     draw_clock_icon();
+    // TODO: make cooler start animation?
   }
 
   // Spell has no effect if your shield is on
@@ -592,9 +591,12 @@ void check_timers() {
 
     // --- Handle shield timer --- //
     if (remaining_game_time > 0) {
-      draw_timer(String(remaining_game_time));
+      draw_game_timer(String(handleTimer(remaining_game_time)));
       remaining_game_time--;
     } 
+    else if (remaining_game_time <= 0){
+      ESP.restart(); //TODO: replace this with end screen logic
+    }
   }
 }
 
@@ -701,9 +703,18 @@ void draw_clock_icon() {
   tft.fillRect(16, 117, 2, 7, TFT_DARKGREY);
 }
 
-void draw_timer(String time){
+void draw_game_timer(String time){
   tft.fillRect(35,120,70,15,TFT_BLACK);
   draw_text(time, 35, 120, 2);
+}
+
+String handleTimer(int time) {
+  int minutes = time / 60;
+  int seconds = time % 60;
+
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%d:%02d", minutes, seconds);
+  return String(buffer);
 }
 
 void write_stunned_timer(String time){
