@@ -7,6 +7,8 @@
 
 // TODO: 
 //    Get rid of SpellEffects struct (just use spell)    
+//    Create end game logic
+//    Make Buzz non-blocking
 
 #include <Wire.h>
 #include <math.h>
@@ -117,26 +119,25 @@ String loading_messages[] = {
   "Playing      Wizard's     Chess...",
 };
 
-//TODO: Make the lives make more sense
 Spell spells[] = {
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
-  {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 3, 7, 0},     "None"},       // Red
-  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -1, 3, 0, -1},   "None"},       // Redish-orange
-  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 1, 3, 0, 0},    "None"},       // Yellow
+  {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 0, 7, 0},     "None"},       // Red
+  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -50, 3, 0, -100},   "None"},       // Redish-orange
+  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 25, 0, 0, 0},    "None"},       // Yellow
   {"Protego Maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 0, 10, 0, 0},  "None"},       // Blue
-  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 1, 3, 0, -1},   "None"},       // Darker Pink
-  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 5, 0, 3, 0, -1},    "None"},       // Lighter Pink
-  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 10, -1, 3, 0, -1}, "None"},       // Teal
+  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 100, 3, 0, -50},   "None"},       // Darker Pink
+  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 10, 0, 3, 0, -100},    "None"},       // Lighter Pink
+  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 10, 0, 3, 0, -50}, "None"},       // Teal
 };
 
 Spell characterSpells[] = {
-  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -1, 3, 0, -1},   "Molly Weasley"},       // Yellow-green1
-  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},    {15, 3, 1, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
-  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 1, -1, 0, 0},    "Hermione Granger"},    // Coral green
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -2, 3, 0, -2},   "Lord Voldemort"},      // Green
-  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -1, 3, 10, -1},  "Ron Weasley"},         // Greenish-blue
-  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 1, 0, 0, 1},    "Luna Lovegood"},       // Sky blue
-  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 1, 0, 0, 0},   "Harry Potter"},        // White
+  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -100, 3, 0, -100},   "Molly Weasley"},       // Yellow-green1
+  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},   {15, 3, 25, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
+  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 50, 0, 0, 0},    "Hermione Granger"},    // Coral green
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -200, 3, 0, -200},   "Lord Voldemort"},      // Green
+  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -100, 0, 10, -100},  "Ron Weasley"},         // Greenish-blue
+  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 100, 0, 0, 100},    "Luna Lovegood"},       // Sky blue
+  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 100, 0, 0, 0},   "Harry Potter"},        // White
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -264,18 +265,7 @@ void in_loop_ESP_recv(){
   // If receiving a message from the base station for the first time
   if (ESP_message.startsWith("base:") && !game_started) {
     game_started = true;
-    
-    // Do this all the first time to start the game
-    clear_screen();
-
-    // Message in form base:number
-    String after = String(ESP_message).substring(5);
-    remaining_game_time = after.toInt();
-    draw_heart_icon();
-    update_points_print();
-    draw_name(self_name);
-    draw_clock_icon();
-    // TODO: make cooler start animation?
+    start_sequence();
   }
 
   // Spell has no effect if your shield is on
@@ -646,6 +636,34 @@ void draw_text(String text, int x_offset, int y_offset, int text_size){
 
 void clear_screen(){
   tft.fillScreen(TFT_BLACK); // fills the entire screen with black
+}
+
+void start_sequence(){
+  // Do this all the first time to start the game
+
+  tft.fillScreen(TFT_GREEN);
+
+  // tft.setTextColor(TFT_BLACK); 
+  // tft.setTextSize(3);
+  // tft.drawString("START!", tft.width() / 2, 47);
+
+  int16_t x = (tft.width() - tft.textWidth("START!")) / 2;
+  int16_t y = 57;
+  tft.setTextColor(TFT_BLACK, TFT_GREEN);
+  tft.drawString("START!", x, y);
+
+  buzzVibrator(250, 2);
+
+  clear_screen();
+  tft.setTextColor(TFT_WHITE); 
+  tft.setTextSize(2);
+  // Message in form base:number
+  String after = String(ESP_message).substring(5);
+  remaining_game_time = after.toInt();
+  draw_heart_icon();
+  update_points_print();
+  draw_name(self_name);
+  draw_clock_icon();
 }
 
 void draw_message_box_first_row(String text){
