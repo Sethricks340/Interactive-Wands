@@ -6,7 +6,6 @@
 // * Works best with a small pause inbetween each movement
 
 // TODO: 
-//    Get rid of SpellEffects struct (just use spell)    
 //    Make Buzz non-blocking
 //    Create filters for more complicated spell effects?
 
@@ -83,21 +82,6 @@ struct Spell {
     int colors[3];
     int effects[6];
     String wizard_name;
-};
-
-struct SpellResults {
-    const char* name;
-    int red;
-    int green;
-    int blue;
-
-    int self_shield;
-    int self_stun;
-    int self_points;
-
-    int others_shield;
-    int others_stun;
-    int others_points;
 };
 
 String loading_messages[] = {
@@ -422,7 +406,7 @@ void spell_recognizing_sequence(){
     return;
   }
   if (listCount && !listening){ // Movement detected while button was pressed, and button is now released
-    SpellResults spell = checkThroughSpells();
+    Spell spell = checkThroughSpells();
     if (spell.name != "None"){
       doSpell(spell);
       // LED timer here
@@ -460,12 +444,9 @@ void addToSpellChecker(String spell){
   listCount++;
 }
 
-SpellResults checkThroughSpells() {
-  SpellResults result;
+Spell checkThroughSpells() {
+  Spell result;
   result.name = "None"; // default
-  result.red = result.green = result.blue = 0;
-  result.self_shield = result.self_stun = result.self_points =
-  result.others_shield = result.others_stun = result.others_points = 0;
 
   // --- check normal spells ---
   for (int i = 0; i < NUM_SPELLS; i++) {
@@ -480,41 +461,19 @@ SpellResults checkThroughSpells() {
     }
 
     if (equals) {
-      result.name = spells[i].name;
-      result.red   = spells[i].colors[0];
-      result.green = spells[i].colors[1];
-      result.blue  = spells[i].colors[2];
-
-      result.self_shield   = spells[i].effects[0];
-      result.self_stun  = spells[i].effects[1];
-      result.self_points     = spells[i].effects[2];
-      result.others_shield = spells[i].effects[3];
-      result.others_stun= spells[i].effects[4];
-      result.others_points   = spells[i].effects[5];
-
+      result = spells[i];
       return result;
     }
   }
   // --- check character spell explicitly ---
   if (listCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
-    result.name = characterSpell.name;
-    result.red   = characterSpell.colors[0];
-    result.green = characterSpell.colors[1];
-    result.blue  = characterSpell.colors[2];
-
-    result.self_shield   = characterSpell.effects[0];
-    result.self_stun  = characterSpell.effects[1];
-    result.self_points     = characterSpell.effects[2];
-    result.others_shield = characterSpell.effects[3];
-    result.others_stun= characterSpell.effects[4];
-    result.others_points   = characterSpell.effects[5];
-
+    result = characterSpell;
     return result;
   }
   return result; // default "None"
 }
 
-void doSpell(SpellResults spell){
+void doSpell(Spell spell){
   if (last_spell == spell.name){
     draw_message_box_first_row("Can't repeat spell");
     draw_message_box_second_row(" ");
@@ -524,13 +483,13 @@ void doSpell(SpellResults spell){
   last_spell = spell.name;
   draw_message_box_first_row(spell.name);
 
-  control_LED(spell.red, spell.green, spell.blue);
+  control_LED(spell.colors[0], spell.colors[1], spell.colors[2]);
 
   buzzVibrator(250, 2);
 
-  if (spell.self_shield) handle_self_shield(spell.self_shield);
-  if (spell.self_stun) handle_self_stun(spell.self_stun);
-  if (spell.self_points) handle_self_points(spell.self_points);
+  if (spell.effects[0]) handle_self_shield(spell.effects[0]);
+  if (spell.effects[1]) handle_self_stun(spell.effects[1]);
+  if (spell.effects[2]) handle_self_points(spell.effects[2]);
   
   String spell_to_send = spell.name;
   spell_to_send.trim();

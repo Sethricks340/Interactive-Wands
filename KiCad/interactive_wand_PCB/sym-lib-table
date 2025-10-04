@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "ESP_32_ideaspark")(type "KiCad")(uri "${KIPRJMOD}/ESP_32_ideaspark.kicad_sym")(options "")(descr ""))
+)
