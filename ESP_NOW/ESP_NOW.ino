@@ -499,6 +499,7 @@ void doSpell(Spell spell){
   if (spell.effects[1]) handle_self_stun(spell.effects[1]);
   if (spell.effects[2]) handle_self_points(spell.effects[2]);
   
+  if (spell.effects[3] == 0 && spell.effects[4] == 0 && spell.effects[5] == 0) return; // If there are no effects on others, don't send the message
   String spell_to_send = spell.name;
   spell_to_send.trim();
   spell_to_send.toCharArray(message, sizeof(message));
