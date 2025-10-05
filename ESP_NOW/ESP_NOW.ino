@@ -16,80 +16,69 @@
 #include <TFT_eSPI.h>
 #include <SPI.h>
 
-bool game_started = false;
+// --- ESP-NOW --- //
+// REPLACE WITH YOUR RECEIVER MAC Address
+uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+char message[32];
+esp_now_peer_info_t peerInfo;
+String ESP_message = "";
+bool ESP_recv = false;
 
+// --- Drawing --- //
 TFT_eSPI tft = TFT_eSPI();
 // TFT_eSprite sprite = TFT_eSprite(&tft);  // Create a sprite buffer
 
-// REPLACE WITH YOUR RECEIVER MAC Address
-uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-char message[32];
-
-esp_now_peer_info_t peerInfo;
-
-const int buttonPin = 33; // the pin your button is connected to
-int buttonState = 0;
-
-#define RED 25
-#define GREEN 26
-#define BLUE 27
-
+// --- MPU --- //
 // MPU6500 I2C address
 #define MPU_ADDR 0x68
-
 // MPU registers
 #define PWR_MGMT_1   0x6B
 #define ACCEL_XOUT_H 0x3B
 #define GYRO_XOUT_H  0x43
-
 // Scale factors
 const float GYRO_LSB_PER_DPS = 16.4;   // ±2000 dps
-
-// Sampling
-const float dt = 0.01; // 100 Hz -> 10ms
-int waiting_timer = 3000; // in ms
-unsigned long last_waiting_update = 0;
-int last_random = 0;
-
 volatile bool RCW = false;  // Roll Clockwise
 volatile bool RCCW = false; // Roll Counter-Clockwise
 volatile bool PF = false;   // Pitch Forward
 volatile bool PB = false;   // Pitch Back
 volatile bool YR = false;   // Yaw Right
 volatile bool YL = false;   // Yaw Left
-
-volatile bool shield = false;  // Wand can't be affected by spells
-volatile bool stunned = false;  // Wand can't cast spells
-volatile bool listening = false; // If the button is pressed
-
-int last_sec = 0;
-int remaining_stun_time = 0;
-int remaining_shield_time = 0;
-int remaining_game_time = 0;
-int LED_on = false;
-int LED_start_time = 3;
-int LED_timeout = 3000; // 3 seconds (3000ms)
-volatile long Points = 0; // Total Points in this game
-
-const int threshold = 800;
+const int movement_threshold = 800;
 
 // --- Non-blocking vibrator state --- //
+int motorPin = 14;
 bool buzzing = false;
 unsigned long buzz_start = 0;
 int buzz_duration = 0;
 bool buzz_on = false;
 
-// Spell definitions
-struct Spell {
-    const char* name;
-    int length;       // number of movements
-    const char* moves[4];  // max movements per spell
-    int colors[3];
-    int effects[6];
-    String wizard_name;
-};
+// --- LED --- //
+#define RED 25
+#define GREEN 26
+#define BLUE 27
+int LED_on = false;
+int LED_start_time = 3;
+int LED_timeout = 3000; // 3 seconds (3000ms)
 
+// --- Sampling --- //
+const float dt = 0.01; // 100 Hz -> 10ms
+
+// --- States --- //
+bool game_started = false;
+volatile bool shield = false;  // Wand can't be affected by spells
+volatile bool stunned = false;  // Wand can't cast spells
+volatile bool listening = false; // If the button is pressed
+volatile long Points = 0; // Total Points in this game
+int buttonState = 0;
+const int buttonPin = 33;
+
+// --- Timers --- //
+int last_sec = 0;
+int remaining_stun_time = 0;
+int remaining_shield_time = 0;
+int remaining_game_time = 0;
+
+// --- Loading screen --- //
 String loading_messages[] = {
   // Spaces added/deleted in strings for custom text wrapping. 
   "Giving Dobby a sock...",
@@ -108,9 +97,23 @@ String loading_messages[] = {
   "Searching forHorcruxes...",
   "Playing      Wizard's     Chess...",
 };
+int waiting_timer = 3000; // in ms
+unsigned long last_waiting_update = 0;
+int last_random = 0;
 
-Spell spells[] = {
+// --- Spells --- //
+// Spell definitions
+struct Spell {
+    const char* name;
+    int length;       // number of movements
+    const char* moves[4];  // max movements per spell
+    int colors[3];
+    int effects[6];
+    String wizard_name;
+};
+
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
+Spell spells[] = {
   {"Expelliarmus",       2, {"YL", "PF"},    {255, 0,   0},   {0,  0,   0,   0,  7, -25},  "None"},             // Red
   {"Sectumsempra",       2, {"PF", "PB"},    {255, 36,  0},   {0,  10, -50,  10, 0, -100}, "None"},             // Redish-orange
   {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {20, 5,   25,  0,  0,  0},   "None"},             // Yellow
@@ -129,14 +132,15 @@ Spell characterSpells[] = {
   {"Episky",             2, {"PB", "PF"},    {0,   255, 147}, {10, 0,   100, 0,  0,  100}, "Luna Lovegood"},    // Sky blue       // Gives everyone points, even if shielded
   {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {25, 25,  100, 0,  0,  0},   "Harry Potter"},     // White          // When on, protected from Advada Kedavera
 }; 
-
+Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
 const int NUM_CHARACTER_SPELLS = sizeof(characterSpells) / sizeof(characterSpells[0]);
-
 const int MAX_SIZE = 4; 
 String spellChecker[MAX_SIZE]; 
-volatile int listCount = 0;    
+volatile int SpellListCount = 0;    
+String last_spell = "";
 
+// --- Wizards --- //
 const String self_name = "Molly Weasley";
 // const String self_name = "Fred Weasley";
 // const String self_name = "Hermione Granger";
@@ -144,13 +148,6 @@ const String self_name = "Molly Weasley";
 // const String self_name = "Ron Weasley";
 // const String self_name = "Luna Lovegood";
 // const String self_name = "Harry Potter";
-Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
-
-String last_spell = "";
-
-int motorPin = 14;
-String ESP_message = "";
-bool ESP_recv = false;
 
 void setup() {
   tft.init();
@@ -311,7 +308,7 @@ void check_movements(){
 
   // Acceleration in 'Pitch'
   // Wand tip towards head
-  if (gx >= threshold){
+  if (gx >= movement_threshold){
     if (!PB && listening){
       PB = true;
       addToSpellChecker("PB");
@@ -322,7 +319,7 @@ void check_movements(){
   }
   
   // Wand tip away from head
-  if (gx <= -threshold){
+  if (gx <= -movement_threshold){
     if (!PF && listening){
       PF = true;
       addToSpellChecker("PF");
@@ -334,7 +331,7 @@ void check_movements(){
 
   // Acceleration in 'Roll'
   // Roll CW, looking down from hand
-  if (gy >= threshold){
+  if (gy >= movement_threshold){
     if (!RCW && listening){
       RCW = true;
       addToSpellChecker("RCW");
@@ -345,7 +342,7 @@ void check_movements(){
   }
 
   // Roll CCW, looking down from hand
-  if (gy <= -threshold){
+  if (gy <= -movement_threshold){
     if (!RCCW && listening){
       RCCW = true;
       addToSpellChecker("RCCW");
@@ -357,7 +354,7 @@ void check_movements(){
 
   // Acceleration in 'Yaw'
   // Flick to the left
-  if (gz >= threshold){
+  if (gz >= movement_threshold){
     if (!YL && listening){
       YL = true;
       addToSpellChecker("YL");
@@ -368,7 +365,7 @@ void check_movements(){
   }
   
   // Flick to the right
-  if (gz <= -threshold){
+  if (gz <= -movement_threshold){
     if (!YR && listening){
       YR = true;
       addToSpellChecker("YR");
@@ -408,7 +405,7 @@ void spell_recognizing_sequence(){
     clearSpellChecker();
     return;
   }
-  if (listCount && !listening){ // Movement detected while button was pressed, and button is now released
+  if (SpellListCount && !listening){ // Movement detected while button was pressed, and button is now released
     Spell spell = checkThroughSpells();
     if (spell.name != "None"){
       doSpell(spell);
@@ -439,12 +436,12 @@ void getCharacterSpell(){
 }
 
 void clearSpellChecker(){
-  listCount = 0;       
+  SpellListCount = 0;       
 }
 
 void addToSpellChecker(String spell){
-  spellChecker[listCount] = spell;
-  listCount++;
+  spellChecker[SpellListCount] = spell;
+  SpellListCount++;
 }
 
 Spell checkThroughSpells() {
@@ -453,7 +450,7 @@ Spell checkThroughSpells() {
 
   // --- check normal spells ---
   for (int i = 0; i < NUM_SPELLS; i++) {
-    if (listCount != spells[i].length) continue;
+    if (SpellListCount != spells[i].length) continue;
 
     bool equals = true;
     for (int j = 0; j < spells[i].length; j++) {
@@ -469,7 +466,7 @@ Spell checkThroughSpells() {
     }
   }
   // --- check character spell explicitly ---
-  if (listCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
+  if (SpellListCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
     result = characterSpell;
     return result;
   }
@@ -795,4 +792,4 @@ void draw_random_waiting_message(){
   tft.setTextSize(3);       
   tft.setTextColor(TFT_WHITE, TFT_BLACK); 
   tft.println(loading_messages[random_number]);        
-}   
+}
