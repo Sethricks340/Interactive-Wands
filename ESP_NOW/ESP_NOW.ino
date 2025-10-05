@@ -500,6 +500,7 @@ void doSpell(Spell spell){
   spell_to_send.trim();
   spell_to_send.toCharArray(message, sizeof(message));
   // Send spell to any nearby wands using ESP-NOW
+  // TODO: add filter for effects of special spells?
   esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
 }
 
