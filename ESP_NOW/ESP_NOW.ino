@@ -6,8 +6,8 @@
 // * Works best with a small pause inbetween each movement
 
 // TODO: 
-//    Make Buzz non-blocking
 //    Create filters for more complicated spell effects?
+//    Improve buzzer to buzz more than once
 
 #include <Wire.h>
 #include <math.h>
@@ -73,6 +73,12 @@ int LED_timeout = 3000; // 3 seconds (3000ms)
 volatile long Points = 0; // Total Points in this game
 
 const int threshold = 800;
+
+// --- Non-blocking vibrator state --- //
+bool buzzing = false;
+unsigned long buzz_start = 0;
+int buzz_duration = 0;
+bool buzz_on = false;
 
 // Spell definitions
 struct Spell {
@@ -226,6 +232,7 @@ void loop() {
 
   check_movements();
   check_timers();
+  updateBuzz();
 }
 
 //--- ESP-NOW Functions ---//
@@ -261,7 +268,7 @@ void in_loop_ESP_recv(){
     if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
       draw_message_box_first_row("Hit by:");
       draw_message_box_second_row(ESP_message);
-      buzzVibrator(250, 2);
+      startBuzz(500);
       if (spells[i].effects[3]) handle_self_shield(spells[i].effects[3]);
       if (spells[i].effects[4]) handle_self_stun(spells[i].effects[4]);
       if (spells[i].effects[5]) handle_self_points(spells[i].effects[5]);
@@ -273,7 +280,7 @@ void in_loop_ESP_recv(){
     if (strcmp(characterSpells[i].name, ESP_message.c_str()) == 0) {
       draw_message_box_first_row("Hit by:");
       draw_message_box_second_row(ESP_message);
-      buzzVibrator(250, 2);
+      startBuzz(500);
       if (characterSpells[i].effects[3]) handle_self_shield(characterSpells[i].effects[3]);
       if (characterSpells[i].effects[4]) handle_self_stun(characterSpells[i].effects[4]);
       if (characterSpells[i].effects[5]) handle_self_points(characterSpells[i].effects[5]);
@@ -416,7 +423,7 @@ void spell_recognizing_sequence(){
     else{
       draw_message_box_first_row("Spell not recognized");
       draw_message_box_second_row(" ");
-      buzzVibrator(750, 1);
+      startBuzz(500);
     }
     clearSpellChecker();
   }
@@ -477,15 +484,16 @@ void doSpell(Spell spell){
   if (last_spell == spell.name){
     draw_message_box_first_row("Can't repeat spell");
     draw_message_box_second_row(" ");
-    buzzVibrator(750, 1);
+    startBuzz(500);
     return;
   }
   last_spell = spell.name;
   draw_message_box_first_row(spell.name);
+  draw_message_box_second_row(" ");
 
   control_LED(spell.colors[0], spell.colors[1], spell.colors[2]);
 
-  buzzVibrator(250, 2);
+  startBuzz(500);
 
   if (spell.effects[0]) handle_self_shield(spell.effects[0]);
   if (spell.effects[1]) handle_self_stun(spell.effects[1]);
@@ -519,7 +527,7 @@ void check_timers() {
       clear_stunned_area();
       if (stunned) {
         draw_message_box_first_row("You're un-stunned!");
-        buzzVibrator(250, 2);
+        startBuzz(500);
       }
       stunned = false;
     }
@@ -534,7 +542,7 @@ void check_timers() {
       clear_shield_area();
       if (shield){
         draw_message_box_second_row("Shield disabled!");
-        buzzVibrator(250, 2);
+        startBuzz(500);
       }
       shield = false;
     }
@@ -559,6 +567,35 @@ void buzzVibrator(int duration, int times){
     // Turn motor OFF
     digitalWrite(motorPin, LOW);
     delay(duration);  // keep off for 1 second
+  }
+}
+
+void startBuzz(int duration) {
+  buzzing = true;
+  buzz_duration = duration;
+  buzz_on = false;
+  buzz_start = millis();
+}
+
+void updateBuzz() {
+  if (!buzzing) return;
+
+  unsigned long now = millis();
+
+  if (!buzz_on) {
+    // Motor is OFF, turn it ON
+    digitalWrite(motorPin, HIGH);
+    buzz_on = true;
+    buzz_start = now;
+  }
+  else {
+    // Motor is ON, check if time to turn off
+    if (now - buzz_start >= buzz_duration) {
+      digitalWrite(motorPin, LOW);
+      buzz_on = false;
+      buzz_start = now;
+      buzzing = false; // Done buzzing
+    }
   }
 }
 
@@ -605,7 +642,7 @@ void start_sequence(){
   tft.setTextColor(TFT_BLACK, TFT_GREEN);
   tft.setTextSize(3);
   tft.drawString("START!", x, y);
-  buzzVibrator(250, 2);
+  startBuzz(500);
 
   clear_screen();
   tft.setTextColor(TFT_WHITE); 
