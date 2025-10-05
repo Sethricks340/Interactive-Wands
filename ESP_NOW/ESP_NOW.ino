@@ -239,7 +239,7 @@ void loop() {
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
-  if (ESP_recv) return;
+  if (ESP_recv) return; // Return if we haven't dealt with the last incoming message yet. Ensures one message at a time. 
 
   // If you want the MAC address:
   const uint8_t *mac = info->src_addr;   // <- new way to get sender MAC
@@ -267,11 +267,9 @@ void in_loop_ESP_recv(){
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
       draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(ESP_message);
+      draw_message_box_second_row(ESP_message); // TODO: change this to red text instead of two lines. Get rid of "hit by"
       startBuzz(500);
-      if (spells[i].effects[3]) handle_self_shield(spells[i].effects[3]);
-      if (spells[i].effects[4]) handle_self_stun(spells[i].effects[4]);
-      if (spells[i].effects[5]) handle_self_points(spells[i].effects[5]);
+      doHitSpell(spells[i]);
       return;
     }
   }
@@ -279,11 +277,9 @@ void in_loop_ESP_recv(){
   for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
     if (strcmp(characterSpells[i].name, ESP_message.c_str()) == 0) {
       draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(ESP_message);
+      draw_message_box_second_row(ESP_message); // TODO: change this to red text instead of two lines. Get rid of "hit by"      
       startBuzz(500);
-      if (characterSpells[i].effects[3]) handle_self_shield(characterSpells[i].effects[3]);
-      if (characterSpells[i].effects[4]) handle_self_stun(characterSpells[i].effects[4]);
-      if (characterSpells[i].effects[5]) handle_self_points(characterSpells[i].effects[5]);
+      doHitSpell(characterSpells[i]);
       return;
     }
   }
@@ -507,6 +503,16 @@ void doSpell(Spell spell){
   esp_now_send(broadcastAddress, (uint8_t*)message, strlen(message));
 }
 
+void doHitSpell(Spell spell){
+  // TODO: add filter logic here for shield and stun handeling. 
+  // Example: Don't redo the stun timer if it is already on
+  // TODO: add filter for effects of special spells?
+  
+  if (spell.effects[3]) handle_self_shield(spell.effects[3]);  
+  if (spell.effects[4]) handle_self_stun(spell.effects[4]);   
+  if (spell.effects[5]) handle_self_points(spell.effects[5]);
+}
+
 
 //--- Effects Functions ---//
 
@@ -548,7 +554,7 @@ void check_timers() {
       shield = false;
     }
 
-    // --- Handle shield timer --- //
+    // --- Handle game timer --- //
     if (remaining_game_time > 0) {
       draw_game_timer(String(handleTimer(remaining_game_time)));
       remaining_game_time--;
