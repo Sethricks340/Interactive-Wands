@@ -111,24 +111,24 @@ String loading_messages[] = {
 
 Spell spells[] = {
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
-  {"Expelliarmus",       2, {"YL", "PF"},    {255, 0, 0},     {0, 3, 0, 0, 7, 0},     "None"},       // Red
-  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36, 0},    {0, 3, -50, 3, 0, -100},   "None"},       // Redish-orange
-  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {13, 3, 25, 0, 0, 0},    "None"},       // Yellow
-  {"Protego Maxima",     2, {"RCCW", "PB"},  {0, 0, 255},     {10, 10, 0, 10, 0, 0},  "None"},       // Blue
-  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30, 180},  {0, 10, 100, 3, 0, -50},   "None"},       // Darker Pink
-  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30, 100},  {0, 10, 0, 3, 0, -100},    "None"},       // Lighter Pink
-  {"Incendio",           2, {"PF", "RCW"},   {0, 100, 34},    {15, 10, 0, 3, 0, -50}, "None"},       // Teal
+  {"Expelliarmus",       2, {"YL", "PF"},    {255, 0,   0},   {0,  0,   0,   0,  7, -25},  "None"},             // Red
+  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36,  0},   {0,  10, -50,  10, 0, -100}, "None"},             // Redish-orange
+  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {20, 5,   25,  0,  0,  0},   "None"},             // Yellow
+  {"Protego Maxima",     2, {"RCCW", "PB"},  {0,   0,   255}, {20, 20,  0,   20, 0,  0},   "None"},             // Blue
+  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30,  180}, {0,  10,  100, 10, 0, -50},  "None"},             // Darker Pink
+  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30,  100}, {0,  10,  0,   0,  0, -100}, "None"},             // Lighter Pink
+  {"Incendio",           2, {"PF", "RCW"},   {0,   100, 34},  {15, 15,  0,   0,  0, -50},  "None"},             // Teal
 };
 
 Spell characterSpells[] = {
-  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {5, 0, -50, 3, 0, -175},   "Molly Weasley"},       // Yellow-green1
-  {"Marauder's Map",      2, {"PB", "PF"},    {51, 204, 0},   {15, 3, 25, 0, 0, 0},   "Fred Weasley"},        // Yellow-green2
-  {"Alohamora",          2, {"PB", "PF"},    {15, 255, 15},   {0, 3, 50, 0, 0, 0},    "Hermione Granger"},    // Coral green
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0, 255, 0},     {0, 3, -200, 0, 0, -200},   "Lord Voldemort"},      // Green
-  {"Eat Slugs",          2, {"PB", "PF"},    {45, 255, 45},   {0, 3, -100, 0, 10, -100},  "Ron Weasley"},         // Greenish-blue
-  {"Episky",             2, {"PB", "PF"},    {0, 255, 147},   {10, 3, 100, 0, 0, 100},    "Luna Lovegood"},       // Sky blue
-  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {15, 10, 100, 0, 0, 0},   "Harry Potter"},        // White
-};
+  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {0,  20,  0,   15, 0, -100}, "Molly Weasley"},    // Yellow-green1  // Can be performed multiple times in a row 
+  {"Marauder's Map",     2, {"PB", "PF"},    {51,  204, 0},   {60, 60,  60,  0,  0,  0},   "Fred Weasley"},     // Yellow-green2  // Every 10 seconds it is on, +10 seconds to yourself and -10 from everyone else. Turn off by doing spell again?
+  {"Alohamora",          2, {"PB", "PF"},    {15,  255, 15},  {0,  0,   50,  0,  0,  0},   "Hermione Granger"}, // Coral green    // Disables all shields, Invisibility Cloaks, and Marader's Maps
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0,   255, 0},   {0,  20, -200, 0,  0, -200}, "Lord Voldemort"},   // Green          // Goes past all shields, except Invisibility Cloak
+  {"Eat Slugs",          2, {"PB", "PF"},    {45,  255, 45},  {0,  0,  -150, 0,  0, -150}, "Ron Weasley"},      // Greenish-blue  // 25% Hurt Self, 75% Hurt Others (-150)
+  {"Episky",             2, {"PB", "PF"},    {0,   255, 147}, {10, 0,   100, 0,  0,  100}, "Luna Lovegood"},    // Sky blue       // Gives everyone points, even if shielded
+  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {25, 25,  100, 0,  0,  0},   "Harry Potter"},     // White          // When on, protected from Advada Kedavera
+}; 
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
 const int NUM_CHARACTER_SPELLS = sizeof(characterSpells) / sizeof(characterSpells[0]);
@@ -795,4 +795,4 @@ void draw_random_waiting_message(){
   tft.setTextSize(3);       
   tft.setTextColor(TFT_WHITE, TFT_BLACK); 
   tft.println(loading_messages[random_number]);        
-}
+}   
