@@ -642,7 +642,7 @@ void start_sequence(){
   tft.setTextColor(TFT_BLACK, TFT_GREEN);
   tft.setTextSize(3);
   tft.drawString("START!", x, y);
-  startBuzz(500);
+  buzzVibrator(250, 2);
 
   clear_screen();
   tft.setTextColor(TFT_WHITE); 
@@ -650,6 +650,7 @@ void start_sequence(){
   // Message in form base:number
   String after = String(ESP_message).substring(5);
   remaining_game_time = after.toInt();
+  remaining_game_time--; // Compensation for buzz vibrator blocking for one second
   draw_heart_icon();
   update_points_print();
   draw_name(self_name);
