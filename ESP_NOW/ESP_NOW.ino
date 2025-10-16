@@ -148,6 +148,8 @@ const String self_name = "Molly Weasley";
 // const String self_name = "Luna Lovegood";
 // const String self_name = "Harry Potter";
 
+void draw_message_box_second_row(String text, uint16_t color = TFT_BLACK);
+
 void setup() {
   tft.init();
   tft.setRotation(1);
@@ -270,8 +272,7 @@ void in_loop_ESP_recv(){
 
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
-      draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(ESP_message); // TODO: change this to red text instead of two lines. Get rid of "hit by"
+      draw_message_box_second_row(ESP_message, TFT_RED); 
       startBuzz(500);
       doHitSpell(spells[i]);
       ESP_recv = false;
@@ -282,8 +283,7 @@ void in_loop_ESP_recv(){
 
   for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
     if (strcmp(characterSpells[i].name, ESP_message.c_str()) == 0) {
-      draw_message_box_first_row("Hit by:");
-      draw_message_box_second_row(ESP_message); // TODO: change this to red text instead of two lines. Get rid of "hit by"      
+      draw_message_box_second_row(ESP_message, TFT_RED);   
       startBuzz(500);
       doHitSpell(characterSpells[i]);
       ESP_recv = false;
@@ -724,9 +724,11 @@ void draw_message_box_first_row(String text){
   draw_text(text, 0, 47, 2);
 }
 
-void draw_message_box_second_row(String text){
+void draw_message_box_second_row(String text, uint16_t color){
   tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
+  tft.setTextColor(color, TFT_BLACK);
   draw_text(text, 0, 67, 2);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
 }
 
 void draw_name(String name){
@@ -765,7 +767,9 @@ void update_points_print() {
   tft.fillRect(35, 93, 240, 15, TFT_BLACK);
 
   // Rewrite game timer
+  if (Points < 0) tft.setTextColor(TFT_RED, TFT_BLACK); // Right points print in red if below 0 
   draw_text(String(Points), 35, 93, 2);   
+  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
 }
 
 void draw_clock_icon() {
