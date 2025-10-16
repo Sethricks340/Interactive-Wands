@@ -6,8 +6,7 @@
 // * Works best with a small pause inbetween each movement
 
 // TODO: 
-//    Create filters for more complicated spell effects?
-//    Improve buzzer to buzz more than once
+//    Improve buzzer to buzz more than once, or just longer
 
 #include <Wire.h>
 #include <math.h>
@@ -179,6 +178,7 @@ void setup() {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
+  delay(100);
 
   // Register recieve callback
   esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
@@ -274,6 +274,8 @@ void in_loop_ESP_recv(){
       draw_message_box_second_row(ESP_message); // TODO: change this to red text instead of two lines. Get rid of "hit by"
       startBuzz(500);
       doHitSpell(spells[i]);
+      ESP_recv = false;
+      ESP_message = "";
       return;
     }
   }
@@ -284,6 +286,8 @@ void in_loop_ESP_recv(){
       draw_message_box_second_row(ESP_message); // TODO: change this to red text instead of two lines. Get rid of "hit by"      
       startBuzz(500);
       doHitSpell(characterSpells[i]);
+      ESP_recv = false;
+      ESP_message = "";
       return;
     }
   }
