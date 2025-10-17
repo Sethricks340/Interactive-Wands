@@ -58,6 +58,15 @@ bool buzz_on = false;
 int LED_on = false;
 int LED_start_time = 3;
 int LED_timeout = 3000; // 3 seconds (3000ms)
+struct WaitingLED { int r; int g; int b;};
+WaitingLED waitingLights[] = { {255, 255, 255}, {0, 255, 255}, {0, 0, 255}, {255, 0, 255}, {255, 0, 0}, {255, 255, 0}, {0, 255, 0} };
+const int NUM_WAITING_LIGHTS = sizeof(waitingLights) / sizeof(waitingLights[0]);
+WaitingLED currLed = {0, 0, 0};
+int currWaitingLedNum = 0;
+WaitingLED nextLed = {0, 0, 0};
+int waiting_led_timer = 7; // in ms
+unsigned long last_waiting_led_update = 0;
+
 
 // --- Sampling --- //
 const float dt = 0.01; // 100 Hz -> 10ms
@@ -215,6 +224,10 @@ void loop() {
     if (millis() - last_waiting_update >= waiting_timer) {
       draw_random_waiting_message(); 
       last_waiting_update = millis();  // reset timer
+    }
+    if (millis() - last_waiting_led_update >= waiting_led_timer) {
+      change_LED_waiting_color();
+      last_waiting_led_update = millis();  // reset timer
     }
     return;
   }
@@ -537,8 +550,8 @@ void doHitSpell(Spell spell){
   // Example: Don't redo the stun timer if it is already on
   // TODO: add filter for effects of special spells?
   
-  if (spell.effects[3]) handle_self_shield(spell.effects[3]);  
-  if (spell.effects[4]) handle_self_stun(spell.effects[4]);   
+  if (spell.effects[3] && !shield) handle_self_shield(spell.effects[3]);  
+  if (spell.effects[4] && !stunned) handle_self_stun(spell.effects[4]);   
   if (spell.effects[5]) handle_self_points(spell.effects[5]);
 }
 
@@ -657,6 +670,39 @@ void control_LED(int redValue, int greenValue, int blueValue){
   analogWrite(BLUE, blueValue);
 }
 
+void change_LED_waiting_color(){
+  // WaitingLED currLed = {0, 0, 0};
+  // WaitingLED nextLed = {0, 0, 0};
+  if (currLed.r == 0 && currLed.g == 0 && currLed.b == 0){
+    control_LED(255, 255, 255);
+    currLed = {255, 255, 255};
+    nextLed = {0, 255, 255};
+    currWaitingLedNum++;
+    return;
+  }
+
+  if (currLed.r == nextLed.r && currLed.g == nextLed.g && currLed.b == nextLed.b){
+    if (currWaitingLedNum >= 6) currWaitingLedNum = 0;
+    else currWaitingLedNum++;
+    nextLed = waitingLights[currWaitingLedNum];
+  }
+  else{
+    if (currLed.r != nextLed.r){
+      if (currLed.r < nextLed.r) currLed.r++;
+      else currLed.r--;
+    }
+    if (currLed.g != nextLed.g){
+      if (currLed.g < nextLed.g) currLed.g++;
+      else currLed.g--;
+    }
+    if (currLed.b != nextLed.b){
+      if (currLed.b < nextLed.b) currLed.b++;
+      else currLed.b--;
+    }
+    control_LED(currLed.r, currLed.g, currLed.b);
+  }
+}
+
 
 //--- Drawing Functions ---//
 
@@ -677,6 +723,7 @@ void start_sequence(){
   tft.setTextColor(TFT_BLACK, TFT_GREEN);
   tft.setTextSize(3);
   tft.drawString("START!", x, y);
+  control_LED(0, 0, 0);
   buzzVibrator(250, 2);
 
   clear_screen();
