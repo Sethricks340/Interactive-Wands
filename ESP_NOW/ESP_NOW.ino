@@ -671,18 +671,16 @@ void control_LED(int redValue, int greenValue, int blueValue){
 }
 
 void change_LED_waiting_color(){
-  // WaitingLED currLed = {0, 0, 0};
-  // WaitingLED nextLed = {0, 0, 0};
-  if (currLed.r == 0 && currLed.g == 0 && currLed.b == 0){
-    control_LED(255, 255, 255);
-    currLed = {255, 255, 255};
-    nextLed = {0, 255, 255};
+  if (currLed.r == 0 && currLed.g == 0 && currLed.b == 0){ // LED is off initially
+    currLed = waitingLights[0];
+    control_LED(currLed.r, currLed.g, currLed.b);
     currWaitingLedNum++;
+    nextLed = waitingLights[currWaitingLedNum];
     return;
   }
 
   if (currLed.r == nextLed.r && currLed.g == nextLed.g && currLed.b == nextLed.b){
-    if (currWaitingLedNum >= 6) currWaitingLedNum = 0;
+    if (currWaitingLedNum >= NUM_WAITING_LIGHTS - 1) currWaitingLedNum = 0;
     else currWaitingLedNum++;
     nextLed = waitingLights[currWaitingLedNum];
   }
