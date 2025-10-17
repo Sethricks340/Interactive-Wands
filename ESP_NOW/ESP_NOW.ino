@@ -138,7 +138,7 @@ Spell characterSpells[] = {
   {"Advada Kedavera",    2, {"PB", "PF"},    {0,   255, 0},   {0,  20, -200, 0,  0, -200}, "Lord Voldemort"},   // Green          // Goes past all shields, but doesn't hit Harry (DONE)
   {"Eat Slugs",          2, {"PB", "PF"},    {45,  255, 45},  {0,  0,  -150, 0,  0, -150}, "Ron Weasley"},      // Greenish-blue  // 25% Hurt Self, 75% Hurt Others (-150) (DONE)
   {"Episky",             2, {"PB", "PF"},    {0,   255, 147}, {10, 0,   100, 0,  0,  100}, "Luna Lovegood"},    // Sky blue       // Gives everyone points, even if shielded (DONE)
-  {"Invisibility Cloak", 2, {"PB", "PF"},    {255, 255, 255}, {25, 25,  100, 0,  0,  0},   "Harry Potter"},     // White          // Not affected by Advada Kedavera (DONE)
+  {"Expecto Patronum", 2, {"PB", "PF"},    {255, 255, 255}, {25, 25,  100, 0,  0,  0},   "Harry Potter"},     // White          // Not affected by Advada Kedavera (DONE)
 }; 
 Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
