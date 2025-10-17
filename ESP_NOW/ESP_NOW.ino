@@ -7,6 +7,7 @@
 
 // TODO: 
 //    Improve buzzer to buzz more than once, or just longer
+//    ESP seems to receive messages randomly, meaning in the same physical position, a board may or may not receive the message
 
 #include <Wire.h>
 #include <math.h>
