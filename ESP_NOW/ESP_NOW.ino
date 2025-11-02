@@ -213,40 +213,45 @@ void setup() {
 }
 
 void loop() {
-  // If not enough time has passed (less than dt), skip this iteration
-  static unsigned long lastTime = micros();
-  unsigned long now = micros();
-  float elapsed = (now - lastTime) / 1000000.0;
-  if (elapsed < dt) return;
-
+  // --- Handle ESP-NOW messages immediately ---
   if (ESP_recv) in_loop_ESP_recv();
 
+  unsigned long now = millis();
+
+  // --- Pre-game waiting state --- //
   if (!game_started) {
-    if (millis() - last_waiting_update >= waiting_timer) {
-      draw_random_waiting_message(); 
-      last_waiting_update = millis();  // reset timer
+    if (now - last_waiting_update >= waiting_timer) {
+      draw_random_waiting_message();
+      last_waiting_update = now;
     }
-    if (millis() - last_waiting_led_update >= waiting_led_timer) {
+
+    if (now - last_waiting_led_update >= waiting_led_timer) {
       change_LED_waiting_color();
-      last_waiting_led_update = millis();  // reset timer
+      last_waiting_led_update = now;
     }
+
     return;
   }
 
-  listening = !digitalRead(buttonPin); // Low (false) means button pressed
+  // --- Active game state --- //
+  listening = !digitalRead(buttonPin);
 
   spell_recognizing_sequence();
 
-  if (millis() - LED_start_time > LED_timeout){
+  // Timeout for LED
+  if (now - LED_start_time > LED_timeout)
     control_LED(0, 0, 0);
+
+  // Periodic tasks – use timestamps, not fixed dt gating
+  static unsigned long lastPeriodic = 0;
+  if (now - lastPeriodic >= 10) {  // every 10 ms
+    lastPeriodic = now;
+    check_movements();
+    check_timers();
+    updateBuzz();  // must be non-blocking
   }
-
-  lastTime = now;
-
-  check_movements();
-  check_timers();
-  updateBuzz();
 }
+
 
 //--- ESP-NOW Functions ---//
 
@@ -272,6 +277,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 }
 
 void in_loop_ESP_recv(){
+  draw_message_box_first_row(ESP_message); //TODO: remove this. debug only
   // If receiving a message from the base station for the first time
   if (ESP_message.startsWith("base:") && !game_started) {
     game_started = true;
