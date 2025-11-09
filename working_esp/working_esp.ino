@@ -107,6 +107,7 @@ void loop() {
   if (Serial.available() > 0) {
     String received = Serial.readStringUntil('\n');  // read from Pi
     strcpy(myData.a, received.c_str());
+    // delay(10000);
 
     // Clear sprite
     sprite.fillSprite(TFT_BLACK);
