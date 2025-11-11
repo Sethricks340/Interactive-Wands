@@ -277,7 +277,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 }
 
 void in_loop_ESP_recv(){
-  draw_message_box_first_row(ESP_message); //TODO: remove this. debug only
+  // draw_message_box_first_row(ESP_message); //TODO: remove this. debug only
   // If receiving a message from the base station for the first time
   if (ESP_message.startsWith("base:") && !game_started) {
     game_started = true;
