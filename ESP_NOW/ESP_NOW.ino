@@ -139,7 +139,7 @@ Spell characterSpells[] = {
   {"Advada Kedavera",    2, {"PB", "PF"},    {0,   255, 0},   {0,  20, -200, 0,  0, -200}, "Lord Voldemort"},   // Green          // Goes past all shields, but doesn't hit Harry (DONE)
   {"Eat Slugs",          2, {"PB", "PF"},    {45,  255, 45},  {0,  0,  -150, 0,  0, -150}, "Ron Weasley"},      // Greenish-blue  // 25% Hurt Self, 75% Hurt Others (-150) (DONE)
   {"Episky",             2, {"PB", "PF"},    {0,   255, 147}, {10, 0,   100, 0,  0,  100}, "Luna Lovegood"},    // Sky blue       // Gives everyone points, even if shielded (DONE)
-  {"Expecto Patronum", 2, {"PB", "PF"},    {255, 255, 255}, {25, 25,  100, 0,  0,  0},   "Harry Potter"},     // White          // Not affected by Advada Kedavera (DONE)
+  {"Expecto Patronum", 2, {"PB", "PF"},    {255, 255, 255}, {25, 25,  100, 0,  0,  0},   "Harry Potter"},       // White          // Not affected by Advada Kedavera (DONE)
 }; 
 Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -267,12 +267,6 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   message[len] = '\0'; // null terminate
 
   ESP_message = String(message);
-  // Turn off shield if hit by Alohamora, but doesn't affect Fred Weasly
-  if (ESP_message == "Alohamora" && self_name != "Fred Weasley"){
-    shield = false;
-    remaining_shield_time = 0;
-    clear_shield_area();
-  }
   ESP_recv = true;
 }
 
@@ -282,6 +276,13 @@ void in_loop_ESP_recv(){
   if (ESP_message.startsWith("base:") && !game_started) {
     game_started = true;
     start_sequence();
+  }
+
+  // Turn off shield if hit by Alohamora, but doesn't affect Fred Weasly
+  if (ESP_message == "Alohamora" && self_name != "Fred Weasley"){
+    shield = false;
+    remaining_shield_time = 0;
+    clear_shield_area();
   }
 
   // Spell has no effect if your shield is on
@@ -536,7 +537,7 @@ void doSpell(Spell spell){
     return;
   }
 
-  // Turn off shield if hit casting Alohamora
+  // Turn off shield if casting Alohamora
   if (spell.name == "Alohamora"){
     shield = false;
     remaining_shield_time = 0;
