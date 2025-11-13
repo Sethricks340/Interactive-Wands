@@ -105,7 +105,7 @@ void setup() {
 void loop() {
 
   if (Serial.available() > 0) {
-    String received = Serial.readStringUntil('\n');  // read from Pi
+    String received = Serial.readStringUntil('\n'); 
     strcpy(myData.a, received.c_str());
     // delay(10000);
 
