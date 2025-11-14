@@ -230,6 +230,35 @@ void loop() {
         doSpell(characterSpells[i]);
       }
     }
+    // Debug //TODO: remove this block of code
+    if (received.startsWith("mod:")) {
+      if (received.charAt(4) == 'd') { // d = shield
+        draw_shield(); 
+        shield = true;
+        remaining_shield_time = 99;
+      }
+      if (received.charAt(4) == 'n') { // n = stunned
+        draw_stunned(); 
+        stunned = true;
+        remaining_stun_time = 99;
+      }
+      if (received.charAt(4) == 'b') { // b = both
+        draw_shield(); 
+        shield = true;
+        draw_stunned(); 
+        stunned = true;
+        remaining_stun_time = 99;
+        remaining_shield_time = 99;
+      }
+      if (received.charAt(4) == 'o') { // o = both off
+        clear_shield_area();
+        clear_stunned_area();
+        stunned = false;
+        shield = false;
+        remaining_stun_time = 0;
+        remaining_shield_time = 0;
+      }
+    }
   }
 
   // --- Handle ESP-NOW messages immediately ---
@@ -290,7 +319,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 }
 
 void in_loop_ESP_recv(){
-  draw_message_box_first_row(ESP_message); //TODO: remove this. debug only
+  // draw_message_box_first_row(ESP_message); //TODO: remove this. debug only
   // If receiving a message from the base station for the first time
   if (ESP_message.startsWith("base:") && !game_started) {
     game_started = true;
@@ -564,6 +593,7 @@ Spell checkThroughSpells() {
 }
 
 void doSpell(Spell spell){
+  if (stunned) return; // Don't do the spell if the wand is stunned. 
   // Congelare Lacare can be done more than one time in a row
   if (last_spell == spell.name && spell.name != "Congelare Lacare"){
     draw_message_box_first_row("Can't repeat spell");
@@ -649,7 +679,7 @@ void check_timers() {
     } else {
       clear_shield_area();
       if (shield){
-        draw_message_box_second_row("Shield disabled!");
+        draw_message_box_second_row("Shield disabled!"); //TODO: this isn't working?
         startBuzz(500);
       }
       shield = false;
