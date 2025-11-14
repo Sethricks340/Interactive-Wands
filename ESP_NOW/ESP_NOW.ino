@@ -643,6 +643,9 @@ void doHitSpell(Spell spell){
   // TODO: add filter logic here for shield and stun handeling. 
   // Example: Don't redo the stun timer if it is already on
   // TODO: add filter for effects of special spells?
+
+  // TODO: need to upload this to boards
+  if (shield) return;
   
   if (spell.effects[3] && !shield) handle_self_shield(spell.effects[3]);  
   if (spell.effects[4] && !stunned) handle_self_stun(spell.effects[4]);   
