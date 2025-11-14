@@ -132,18 +132,18 @@ Spell spells[] = {
   {"Incendio",           2, {"PF", "RCW"},   {0,   100, 34},  {15, 15,  0,   0,  0, -50},  "None"},             // Teal
 };
 
-Spell characterSpells[] = {
-  {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {0,  20,  0,   15, 0, -100}, "Molly Weasley"},    // Yellow-green1  // Can be performed multiple times in a row (DONE)
-  {"Marauder's Map",     2, {"PB", "PF"},    {51,  204, 0},   {60, 60,  60,  0,  0,  0},   "Fred Weasley"},     // Yellow-green2  // Shield can't be turned off by Alohamora (DONE)
-  {"Alohamora",          2, {"PB", "PF"},    {15,  255, 15},  {0,  0,   50,  0,  0,  0},   "Hermione Granger"}, // Coral green    // Disables all shields, including self (DONE)
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0,   255, 0},   {0,  20, -200, 0,  0, -200}, "Lord Voldemort"},   // Green          // Goes past all shields, but doesn't hit Harry (DONE)
-  {"Eat Slugs",          2, {"PB", "PF"},    {45,  255, 45},  {0,  0,  -150, 0,  0, -150}, "Ron Weasley"},      // Greenish-blue  // 25% Hurt Self, 75% Hurt Others (-150) (DONE)
-  {"Episky",             2, {"PB", "PF"},    {0,   255, 147}, {10, 0,   100, 0,  0,  100}, "Luna Lovegood"},    // Sky blue       // Gives everyone points, even if shielded (DONE)
-  {"Expecto Patronum", 2, {"PB", "PF"},    {255, 255, 255}, {25, 25,  100, 0,  0,  0},   "Harry Potter"},       // White          // Not affected by Advada Kedavera (DONE)
-}; 
-Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
+// Spell characterSpells[] = {
+//   {"Congelare Lacare",   2, {"PB", "PF"},    {102, 153, 0},   {0,  20,  0,   15, 0, -100}, "Molly Weasley"},    // Yellow-green1  // Can be performed multiple times in a row (DONE)
+//   {"Marauder's Map",     2, {"PB", "PF"},    {51,  204, 0},   {60, 60,  60,  0,  0,  0},   "Fred Weasley"},     // Yellow-green2  // Shield can't be turned off by Alohamora (DONE)
+//   {"Alohamora",          2, {"PB", "PF"},    {15,  255, 15},  {0,  0,   50,  0,  0,  0},   "Hermione Granger"}, // Coral green    // Disables all shields, including self (DONE)
+//   {"Advada Kedavera",    2, {"PB", "PF"},    {0,   255, 0},   {0,  20, -200, 0,  0, -200}, "Lord Voldemort"},   // Green          // Goes past all shields, but doesn't hit Harry (DONE)
+//   {"Eat Slugs",          2, {"PB", "PF"},    {45,  255, 45},  {0,  0,  -150, 0,  0, -150}, "Ron Weasley"},      // Greenish-blue  // 25% Hurt Self, 75% Hurt Others (-150) (DONE)
+//   {"Episky",             2, {"PB", "PF"},    {0,   255, 147}, {10, 0,   100, 0,  0,  100}, "Luna Lovegood"},    // Sky blue       // Gives everyone points, even if shielded (DONE)
+//   {"Expecto Patronum", 2, {"PB", "PF"},    {255, 255, 255}, {25, 25,  100, 0,  0,  0},   "Harry Potter"},       // White          // Not affected by Advada Kedavera (DONE)
+// }; 
+// Spell characterSpell = {"_", 0, {"PB", "PF"}, {0, 0, 0}, {0, 0, 0, 0, 0, 0}, "_"};
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
-const int NUM_CHARACTER_SPELLS = sizeof(characterSpells) / sizeof(characterSpells[0]);
+// const int NUM_CHARACTER_SPELLS = sizeof(characterSpells) / sizeof(characterSpells[0]);
 const int MAX_SIZE = 4; 
 String spellChecker[MAX_SIZE]; 
 volatile int SpellListCount = 0;    
@@ -209,7 +209,7 @@ void setup() {
   control_LED(0, 0, 0); // LED off
   
   setupMPU();
-  getCharacterSpell();
+  // getCharacterSpell();
 }
 
 void loop() {
@@ -224,12 +224,12 @@ void loop() {
       }
     }
 
-    for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
-      if (strcmp(characterSpells[i].name, received.c_str()) == 0) {
-        // ESPNOWSendData(received);
-        doSpell(characterSpells[i]);
-      }
-    }
+    // for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
+      // if (strcmp(characterSpells[i].name, received.c_str()) == 0) {
+      //   // ESPNOWSendData(received);
+      //   doSpell(characterSpells[i]);
+      // }
+    // }
     // Debug //TODO: remove this block of code
     if (received.startsWith("mod:")) {
       if (received.charAt(4) == 'd') { // d = shield
@@ -360,17 +360,17 @@ void in_loop_ESP_recv(){
   }
 
   // Turn off shield if hit by Alohamora, but doesn't affect Fred Weasly
-  if (ESP_message == "Alohamora" && self_name != "Fred Weasley"){
-    shield = false;
-    remaining_shield_time = 0;
-    clear_shield_area();
-  }
+  // if (ESP_message == "Alohamora" && self_name != "Fred Weasley"){
+  //   shield = false;
+  //   remaining_shield_time = 0;
+  //   clear_shield_area();
+  // }
 
   // Spell has no effect if your shield is on
   // Episky Passes through all shields
   // Advada Kedavera Passes through all shields
   // Advada Kedavera has no effect on Harry Potter
-  if ((shield && ESP_message != "Episky" && ESP_message != "Advada Kedavera") || (ESP_message == "Advada Kedavera" && self_name == "Harry Potter")) return;
+  // if ((shield && ESP_message != "Episky" && ESP_message != "Advada Kedavera") || (ESP_message == "Advada Kedavera" && self_name == "Harry Potter")) return;
 
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
@@ -383,16 +383,16 @@ void in_loop_ESP_recv(){
     }
   }
 
-  for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
-    if (strcmp(characterSpells[i].name, ESP_message.c_str()) == 0) {
-      draw_message_box_second_row(ESP_message, TFT_RED);   
-      startBuzz(500);
-      doHitSpell(characterSpells[i]);
-      ESP_recv = false;
-      ESP_message = "";
-      return;
-    }
-  }
+  // for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
+  //   if (strcmp(characterSpells[i].name, ESP_message.c_str()) == 0) {
+  //     draw_message_box_second_row(ESP_message, TFT_RED);   
+  //     startBuzz(500);
+  //     doHitSpell(characterSpells[i]);
+  //     ESP_recv = false;
+  //     ESP_message = "";
+  //     return;
+  //   }
+  // }
   ESP_recv = false;
   ESP_message = "";
 }
@@ -541,18 +541,18 @@ void spell_recognizing_sequence(){
   }
 }
 
-void getCharacterSpell(){
-  for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
-    if (self_name == characterSpells[i].wizard_name){
-      characterSpell.name = characterSpells[i].name;
-      characterSpell.length = characterSpells[i].length;
-      for(int j = 0; j < 4; j++) characterSpell.moves[j] = characterSpells[i].moves[j];
-      for(int j = 0; j < 3; j++) characterSpell.colors[j] = characterSpells[i].colors[j];
-      for(int j = 0; j < 6; j++) characterSpell.effects[j] = characterSpells[i].effects[j];
-      characterSpell.wizard_name = characterSpells[i].wizard_name;
-    }
-  }
-}
+// void getCharacterSpell(){
+//   for (int i = 0; i < NUM_CHARACTER_SPELLS; i++) {
+//     if (self_name == characterSpells[i].wizard_name){
+//       characterSpell.name = characterSpells[i].name;
+//       characterSpell.length = characterSpells[i].length;
+//       for(int j = 0; j < 4; j++) characterSpell.moves[j] = characterSpells[i].moves[j];
+//       for(int j = 0; j < 3; j++) characterSpell.colors[j] = characterSpells[i].colors[j];
+//       for(int j = 0; j < 6; j++) characterSpell.effects[j] = characterSpells[i].effects[j];
+//       characterSpell.wizard_name = characterSpells[i].wizard_name;
+//     }
+//   }
+// }
 
 void clearSpellChecker(){
   SpellListCount = 0;       
@@ -585,17 +585,17 @@ Spell checkThroughSpells() {
     }
   }
   // --- check character spell explicitly ---
-  if (SpellListCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
-    result = characterSpell;
-    return result;
-  }
+  // if (SpellListCount == 2 && spellChecker[0] == "PB" && spellChecker[1] == "PF") {
+  //   result = characterSpell;
+  //   return result;
+  // }
   return result; // default "None"
 }
 
 void doSpell(Spell spell){
   if (stunned) return; // Don't do the spell if the wand is stunned. 
   // Congelare Lacare can be done more than one time in a row
-  if (last_spell == spell.name && spell.name != "Congelare Lacare"){
+  if (last_spell == spell.name){
     draw_message_box_first_row("Can't repeat spell");
     draw_message_box_second_row(" ");
     startBuzz(500);
@@ -610,27 +610,27 @@ void doSpell(Spell spell){
   startBuzz(500);
 
   // Eat Slugs
-  if (spell.name == "Eat Slugs"){
-    int random_number = random(1, 5);
-    // 25% hurt yourself
-    if (random_number == 1) handle_self_points(spell.effects[2]);
-    // 75% hurt others
-    else ESPNOWSendData(spell.name);
-    return;
-  }
+  // if (spell.name == "Eat Slugs"){
+  //   int random_number = random(1, 5);
+  //   // 25% hurt yourself
+  //   if (random_number == 1) handle_self_points(spell.effects[2]);
+  //   // 75% hurt others
+  //   else ESPNOWSendData(spell.name);
+  //   return;
+  // }
 
   // Turn off shield if casting Alohamora
-  if (spell.name == "Alohamora"){
-    shield = false;
-    remaining_shield_time = 0;
-    clear_shield_area();
-  }
+  // if (spell.name == "Alohamora"){
+  //   shield = false;
+  //   remaining_shield_time = 0;
+  //   clear_shield_area();
+  // }
 
   if (spell.effects[0]) handle_self_shield(spell.effects[0]);
   if (spell.effects[1]) handle_self_stun(spell.effects[1]);
   if (spell.effects[2]) handle_self_points(spell.effects[2]);
   
-  if (spell.effects[3] == 0 && spell.effects[4] == 0 && spell.effects[5] == 0 && spell.name != "Alohamora") return; // If there are no effects on others, exempting Alohamora, don't send the message
+  if (spell.effects[3] == 0 && spell.effects[4] == 0 && spell.effects[5] == 0) return; // If there are no effects on others
   
   ESPNOWSendData(spell.name);
 }
