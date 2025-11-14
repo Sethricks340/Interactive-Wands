@@ -123,13 +123,15 @@ struct Spell {
 
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
 Spell spells[] = {
-  {"Expelliarmus",       2, {"YL", "PF"},    {255, 0,   0},   {0,  0,   0,   0,  7, -25},  "None"},             // Red
-  {"Sectumsempra",       2, {"PF", "PB"},    {255, 36,  0},   {0,  10, -50,  10, 0, -100}, "None"},             // Redish-orange
-  {"Protego",            2, {"YR", "PB"},    {255, 127, 0},   {20, 5,   25,  0,  0,  0},   "None"},             // Yellow
-  {"Protego Maxima",     2, {"RCCW", "PB"},  {0,   0,   255}, {20, 20,  0,   20, 0,  0},   "None"},             // Blue
-  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30,  180}, {0,  10,  100, 10, 0, -50},  "None"},             // Darker Pink
-  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30,  100}, {0,  10,  0,   0,  0, -100}, "None"},             // Lighter Pink
-  {"Incendio",           2, {"PF", "RCW"},   {0,   100, 34},  {15, 15,  0,   0,  0, -50},  "None"},             // Teal
+  {"Expelliarmus",       1, {"YL"},          {255, 0,   0},   {0,  0,   0,   0,  7, -25},  "None"},   // Red
+  {"Sectumsempra",       1, {"YR"},          {255, 36,  0},   {0,  10, -50,  10, 0, -100}, "None"},   // Redish-orange
+  {"Protego",            1, {"PB"},          {255, 127, 0},   {20, 5,   25,  0,  0,  0},   "None"},   // Yellow
+  {"Protego Maxima",     1, {"PF"},          {0,   0,   255}, {20, 20,  0,   20, 0,  0},   "None"},   // Blue
+  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30,  180}, {0,  10,  100, 10, 0, -50},  "None"},   // Darker Pink
+  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30,  100}, {0,  10,  0,   0,  0, -100}, "None"},   // Lighter Pink
+  {"Incendio",           1, {"RCCW"},        {0,   100, 34},  {15, 15,  0,   0,  0, -50},  "None"},   // Teal
+  {"Stupify",            1, {"RCW"},         {255, 255, 255}, {25, 0,  100, 0,  10,  -25}, "None"},   // White         
+  {"Advada Kedavera",    2, {"PB", "PF"},    {0,   255, 0},   {0,  20, -200, 0,  0, -200}, "None"},   // Green       
 };
 
 // Spell characterSpells[] = {
@@ -150,13 +152,13 @@ volatile int SpellListCount = 0;
 String last_spell = "";
 
 // --- Wizards --- //
-const String self_name = "Molly Weasley";
+// const String self_name = "Molly Weasley";
 // const String self_name = "Fred Weasley";
 // const String self_name = "Hermione Granger";
 // const String self_name = "Lord Voldemort";
 // const String self_name = "Ron Weasley";
 // const String self_name = "Luna Lovegood";
-// const String self_name = "Harry Potter";
+const String self_name = "Harry Potter";
 
 void draw_message_box_second_row(String text, uint16_t color = TFT_BLACK);
 
@@ -371,6 +373,8 @@ void in_loop_ESP_recv(){
   // Advada Kedavera Passes through all shields
   // Advada Kedavera has no effect on Harry Potter
   // if ((shield && ESP_message != "Episky" && ESP_message != "Advada Kedavera") || (ESP_message == "Advada Kedavera" && self_name == "Harry Potter")) return;
+  // TODO: shield isn't working because we still need to upload this line:
+  if (shield) return;
 
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
