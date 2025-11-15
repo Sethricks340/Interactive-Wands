@@ -93,13 +93,6 @@ void loop() {
       handleTimer();
       last_sec = curr_sec;
     }
-
-    // TODO: remove this block, debug only
-    if (Serial.available() > 0) { // Debugging
-      String received = Serial.readStringUntil('\n'); 
-      if (received.length() == 1) Send_ESP_Now_String("mod:" + received);
-      else Send_ESP_Now_String(received);
-    }
     return;
   }
 
