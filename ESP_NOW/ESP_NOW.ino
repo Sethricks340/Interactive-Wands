@@ -7,6 +7,7 @@
 
 // TODO: 
 // shield disabled message not working
+// points: x stopped working at the end game
 
 #include <Wire.h>
 #include <math.h>
