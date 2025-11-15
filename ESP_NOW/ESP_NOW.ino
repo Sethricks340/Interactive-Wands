@@ -148,8 +148,8 @@ const String self_name = "Ron Weasley";
 // const String self_name = "Luna Lovegood";
 // const String self_name = "Harry Potter";
 
-void draw_message_box_second_row(String text, uint16_t color = TFT_BLACK);
-void draw_message_box_first_row(String text, uint16_t color = TFT_BLACK);
+// void draw_message_box_second_row(String text, uint16_t color = TFT_BLACK);
+// void draw_message_box_first_row(String text, uint16_t color = TFT_BLACK);
 
 void setup() {
   tft.init();
@@ -318,7 +318,8 @@ void in_loop_ESP_recv(){
 
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
-      draw_message_box_second_row(ESP_message, TFT_RED); 
+      draw_message_box_second_row(ESP_message); 
+      // draw_message_box_second_row(ESP_message, TFT_RED); 
       startBuzz(500);
       doHitSpell(spells[i]);
       ESP_recv = false;
@@ -518,7 +519,8 @@ void doSpell(Spell spell){
     return;
   }
   last_spell = spell.name;
-  draw_message_box_first_row(spell.name, TFT_GREEN);
+  draw_message_box_first_row(spell.name);
+  // draw_message_box_first_row(spell.name, TFT_GREEN);
   draw_message_box_second_row(" ");
 
   control_LED(spell.colors[0], spell.colors[1], spell.colors[2]);
@@ -751,18 +753,28 @@ void print_score_screen(){
   ESP.restart();
 }
 
-void draw_message_box_first_row(String text, uint16_t color){
+// void draw_message_box_first_row(String text, uint16_t color){
+//   tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
+//   tft.setTextColor(color, TFT_BLACK);
+//   draw_text(text, 0, 47, 2);
+//   tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
+// }
+
+void draw_message_box_first_row(String text){
   tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
-  tft.setTextColor(color, TFT_BLACK);
   draw_text(text, 0, 47, 2);
-  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
 }
 
-void draw_message_box_second_row(String text, uint16_t color){
+// void draw_message_box_second_row(String text, uint16_t color){
+//   tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
+//   tft.setTextColor(color, TFT_BLACK);
+//   draw_text(text, 0, 67, 2);
+//   tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
+// }
+
+void draw_message_box_second_row(String text){
   tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
-  tft.setTextColor(color, TFT_BLACK);
   draw_text(text, 0, 67, 2);
-  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
 }
 
 void draw_name(String name){
