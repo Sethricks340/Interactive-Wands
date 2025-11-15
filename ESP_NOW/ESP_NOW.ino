@@ -26,7 +26,6 @@ bool ESP_recv = false;
 
 // --- Drawing --- //
 TFT_eSPI tft = TFT_eSPI();
-// TFT_eSprite sprite = TFT_eSprite(&tft);  // Create a sprite buffer
 
 // --- MPU --- //
 // MPU6500 I2C address
@@ -148,8 +147,8 @@ const String self_name = "Ron Weasley";
 // const String self_name = "Luna Lovegood";
 // const String self_name = "Harry Potter";
 
-// void draw_message_box_second_row(String text, uint16_t color = TFT_BLACK);
-// void draw_message_box_first_row(String text, uint16_t color = TFT_BLACK);
+void draw_message_box_second_row(String text, uint16_t color = TFT_WHITE);
+void draw_message_box_first_row(String text, uint16_t color = TFT_WHITE);
 
 void setup() {
   tft.init();
@@ -314,12 +313,15 @@ void in_loop_ESP_recv(){
   if (!game_started) return;
 
   // Spell has no effect if your shield is on
-  if (shield) return;
+  if (shield) {
+      ESP_recv = false;   // Clear the message
+      ESP_message = "";
+      return;
+  }
 
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
-      draw_message_box_second_row(ESP_message); 
-      // draw_message_box_second_row(ESP_message, TFT_RED); 
+      draw_message_box_first_row(ESP_message, TFT_RED); 
       startBuzz(500);
       doHitSpell(spells[i]);
       ESP_recv = false;
@@ -469,7 +471,6 @@ void spell_recognizing_sequence(){
     }
     else{
       draw_message_box_first_row("Spell not recognized");
-      draw_message_box_second_row(" ");
       startBuzz(500);
     }
     clearSpellChecker();
@@ -514,14 +515,11 @@ void doSpell(Spell spell){
   // Congelare Lacare can be done more than one time in a row
   if (last_spell == spell.name){
     draw_message_box_first_row("Can't repeat spell");
-    draw_message_box_second_row(" ");
     startBuzz(500);
     return;
   }
   last_spell = spell.name;
-  draw_message_box_first_row(spell.name);
-  // draw_message_box_first_row(spell.name, TFT_GREEN);
-  draw_message_box_second_row(" ");
+  draw_message_box_first_row(spell.name, TFT_GREEN);
 
   control_LED(spell.colors[0], spell.colors[1], spell.colors[2]);
 
@@ -578,7 +576,7 @@ void check_timers() {
     } else {
       clear_shield_area();
       if (shield){
-        draw_message_box_second_row("Shield disabled!"); //TODO: this isn't working?
+        draw_message_box_first_row("Shield disabled!"); //TODO: this isn't working?
         startBuzz(500);
       }
       shield = false;
@@ -753,28 +751,18 @@ void print_score_screen(){
   ESP.restart();
 }
 
-// void draw_message_box_first_row(String text, uint16_t color){
-//   tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
-//   tft.setTextColor(color, TFT_BLACK);
-//   draw_text(text, 0, 47, 2);
-//   tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
-// }
-
-void draw_message_box_first_row(String text){
+void draw_message_box_first_row(String text, uint16_t color){
   tft.fillRect(0, 47, tft.width(), 20, TFT_BLACK);
+  tft.setTextColor(color, TFT_BLACK);
   draw_text(text, 0, 47, 2);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
 }
 
-// void draw_message_box_second_row(String text, uint16_t color){
-//   tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
-//   tft.setTextColor(color, TFT_BLACK);
-//   draw_text(text, 0, 67, 2);
-//   tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
-// }
-
-void draw_message_box_second_row(String text){
+void draw_message_box_second_row(String text, uint16_t color){
   tft.fillRect(0, 67, tft.width(), 20, TFT_BLACK);
+  tft.setTextColor(color, TFT_BLACK);
   draw_text(text, 0, 67, 2);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Reset to default text color
 }
 
 void draw_name(String name){
