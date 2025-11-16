@@ -120,15 +120,15 @@ struct Spell {
 
 // Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
 Spell spells[] = {
-  {"Expelliarmus",       1, {"YL"},          {255, 0,   0},   {0,  0,   0,   0,  7, -25}},  // Red
-  {"Sectumsempra",       1, {"YR"},          {255, 36,  0},   {0,  10, -50,  10, 0, -100}}, // Redish-orange
-  {"Protego",            1, {"PB"},          {255, 127, 0},   {20, 5,   25,  0,  0,  0}},   // Yellow
-  {"Protego Maxima",     1, {"PF"},          {0,   0,   255}, {20, 20,  0,   20, 0,  0}},   // Blue
-  {"Wingardium Leviosa", 2, {"YR", "PF"},    {180, 30,  180}, {0,  10,  100, 10, 0, -50}},  // Darker Pink
-  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30,  100}, {0,  10,  0,   0,  0, -100}}, // Lighter Pink
-  {"Incendio",           1, {"RCCW"},        {0,   100, 34},  {15, 15,  0,   0,  0, -50}},  // Teal
-  {"Stupify",            1, {"RCW"},         {255, 255, 255}, {25, 0,  100, 0,  10,  -25}}, // White         
-  {"Advada Kedavera",    2, {"PB", "PF"},    {0,   255, 0},   {0,  20, -200, 0,  0, -200}}  // Green       
+  {"Expelliarmus",       1, {"YL"},          {255, 0,   0},   {0,  0,   0,    0,  7,  -25}},  // Red
+  {"Sectumsempra",       1, {"YR"},          {255, 36,  0},   {0,  10,  -50,  10, 0,  -100}}, // Redish-orange
+  {"Protego",            1, {"PB"},          {255, 127, 0},   {20, 5,   25,   0,  0,  0}},    // Yellow
+  {"Protego Maxima",     1, {"PF"},          {0,   0,   255}, {20, 0,   0,    20, 0,  0}},    // Blue
+  {"Wingardium Leviosa", 2, {"YR",  "PF"},   {180, 30,  180}, {0,  10,  100,  10, 0,  -50}},  // Darker Pink
+  {"Patrificus Totalus", 2, {"RCW", "RCCW"}, {180, 30,  100}, {0,  10,  0,    0,  0,  -100}}, // Lighter Pink
+  {"Incendio",           1, {"RCCW"},        {0,   100, 34},  {0,  15,  0,    10, 0,  -50}},  // Teal
+  {"Stupify",            1, {"RCW"},         {255, 255, 255}, {0,  10,  50,   0,  10, -25}},  // White         
+  {"Advada Kedavera",    2, {"PB",  "PF"},   {0,   255, 0},   {0,  20,  -100, 0,  0,  -200}}  // Green       
 };
 
 const int NUM_SPELLS = sizeof(spells) / sizeof(spells[0]);
@@ -138,11 +138,11 @@ volatile int SpellListCount = 0;
 String last_spell = "";
 
 // --- Wizards --- //
-// const String self_name = "Molly Weasley";
+const String self_name = "Molly Weasley";
 // const String self_name = "Fred Weasley";
 // const String self_name = "Hermione Granger";
 // const String self_name = "Lord Voldemort";
-const String self_name = "Ron Weasley";
+// const String self_name = "Ron Weasley";
 // const String self_name = "Luna Lovegood";
 // const String self_name = "Harry Potter";
 
