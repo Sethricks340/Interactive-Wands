@@ -3,7 +3,6 @@
 // Notes for users:
 // * Works best with quick flicks
 // * Press button, do spell, release button
-// * Works best with a small pause inbetween each movement
 
 // TODO: 
 
@@ -66,17 +65,12 @@ WaitingLED nextLed = {0, 0, 0};
 int waiting_led_timer = 7; // in ms
 unsigned long last_waiting_led_update = 0;
 
-
-// --- Sampling --- //
-const float dt = 0.01; // 100 Hz -> 10ms
-
 // --- States --- //
 bool game_started = false;
 volatile bool shield = false;  // Wand can't be affected by spells
 volatile bool stunned = false;  // Wand can't cast spells
 volatile bool listening = false; // If the button is pressed
 volatile long Points = 0; // Total Points in this game
-int buttonState = 0;
 const int buttonPin = 33;
 
 // --- Timers --- //
@@ -118,7 +112,7 @@ struct Spell {
     int effects[6];
 };
 
-// Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life, spell owner
+// Spell name, length of moves, moves, RGB, self-shield, self-stun, self-life, others-shield, others-stun, others-life
 Spell spells[] = {
   {"Expelliarmus",       1, {"YL"},          {255, 0,   0},   {0,  0,   0,    0,  7,  -25}},  // Red
   {"Sectumsempra",       1, {"YR"},          {255, 36,  0},   {0,  10,  -50,  10, 0,  -100}}, // Redish-orange
