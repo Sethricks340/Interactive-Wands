@@ -196,46 +196,6 @@ void setup() {
 }
 
 void loop() {
-  // TODO: debug, remove this
-  if (Serial.available() > 0) { // Debugging
-    String received = Serial.readStringUntil('\n'); 
-
-    for (int i = 0; i < NUM_SPELLS; i++) {
-      if (strcmp(spells[i].name, received.c_str()) == 0) {
-        doSpell(spells[i]);
-      }
-    }
-
-    // Debug //TODO: remove this block of code
-    if (received.startsWith("mod:")) {
-      if (received.charAt(4) == 'd') { // d = shield
-        draw_shield(); 
-        shield = true;
-        remaining_shield_time = 99;
-      }
-      if (received.charAt(4) == 'n') { // n = stunned
-        draw_stunned(); 
-        stunned = true;
-        remaining_stun_time = 99;
-      }
-      if (received.charAt(4) == 'b') { // b = both
-        draw_shield(); 
-        shield = true;
-        draw_stunned(); 
-        stunned = true;
-        remaining_stun_time = 99;
-        remaining_shield_time = 99;
-      }
-      if (received.charAt(4) == 'o') { // o = both off
-        clear_shield_area();
-        clear_stunned_area();
-        stunned = false;
-        shield = false;
-        remaining_stun_time = 0;
-        remaining_shield_time = 0;
-      }
-    }
-  }
 
   // --- Handle ESP-NOW messages immediately --- //
   if (ESP_recv) in_loop_ESP_recv();
