@@ -435,9 +435,13 @@ void clearSpellChecker(){
 }
 
 void addToSpellChecker(String spell){
-  spellChecker[SpellListCount] = spell;
-  SpellListCount++;
+  if (SpellListCount < MAX_SIZE) {
+    spellChecker[SpellListCount] = spell;
+    SpellListCount++;
+  } 
+  // If SpellListCount >= MAX_SIZE, do nothing, extra movements are ignored
 }
+
 
 Spell checkThroughSpells() {
   Spell result;
