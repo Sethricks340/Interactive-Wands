@@ -422,7 +422,7 @@ void spell_recognizing_sequence(){
     clearSpellChecker();
     return;
   }
-  if (SpellListCount && !listening){ // Movement detected while button was pressed, and button is now released
+  if (SpellListCount && !listening){ // Movement detected during button press, and button is now released
     Spell spell = checkThroughSpells();
     if (spell.name != "None"){
       doSpell(spell);
@@ -558,18 +558,6 @@ void check_timers() {
   }
 }
 
-void buzzVibrator(int duration, int times){
-  for (int i = 0; i < times; i++) {
-    // Turn motor ON
-    digitalWrite(motorPin, HIGH);
-    delay(duration);  // keep on for 1 second
-
-    // Turn motor OFF
-    digitalWrite(motorPin, LOW);
-    delay(duration);  // keep off for 1 second
-  }
-}
-
 void startBuzz(int duration) {
   buzzing = true;
   buzz_duration = duration;
@@ -674,7 +662,7 @@ void start_sequence(){
   tft.setTextSize(3);
   tft.drawString("START!", x, y);
   control_LED(0, 0, 0);
-  buzzVibrator(250, 2);
+  startBuzz(500);
 
   clear_screen();
   tft.setTextColor(TFT_WHITE); 
@@ -697,7 +685,7 @@ void end_sequence(){
   int16_t y = 57;
   tft.setTextColor(TFT_BLACK, TFT_RED);
   tft.drawString("GAME OVER!", x, y);
-  buzzVibrator(250, 2);
+  startBuzz(500);
   print_score_screen();
 }
 
