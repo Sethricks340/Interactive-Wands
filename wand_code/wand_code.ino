@@ -275,7 +275,7 @@ void in_loop_ESP_recv(){
   for (int i = 0; i < NUM_SPELLS; i++) {
     if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
       draw_message_box_first_row(ESP_message, TFT_RED); 
-      startBuzz(500);
+      startBuzz(250);
       doHitSpell(spells[i]);
       ESP_recv = false;
       ESP_message = "";
@@ -432,7 +432,7 @@ void spell_recognizing_sequence(){
     }
     else{
       draw_message_box_first_row("Spell not recognized");
-      startBuzz(500);
+      startBuzz(250);
     }
     clearSpellChecker();
   }
@@ -480,7 +480,7 @@ void doSpell(Spell spell){
   // Congelare Lacare can be done more than one time in a row
   if (last_spell == spell.name){
     draw_message_box_first_row("Can't repeat spell");
-    startBuzz(500);
+    startBuzz(250);
     return;
   }
   last_spell = spell.name;
@@ -488,7 +488,7 @@ void doSpell(Spell spell){
 
   control_LED(spell.colors[0], spell.colors[1], spell.colors[2]);
 
-  startBuzz(500);
+  startBuzz(250);
 
   if (spell.effects[0] && !shield) handle_self_shield(spell.effects[0]);
   if (spell.effects[1] && !stunned) handle_self_stun(spell.effects[1]);
@@ -527,7 +527,7 @@ void check_timers() {
       clear_stunned_area();
       if (stunned) {
         draw_message_box_first_row("You're un-stunned!");
-        startBuzz(500);
+        startBuzz(250);
       }
       stunned = false;
     }
@@ -542,7 +542,7 @@ void check_timers() {
       clear_shield_area();
       if (shield){
         draw_message_box_first_row("Shield disabled!"); //TODO: this isn't working?
-        startBuzz(500);
+        startBuzz(250);
       }
       shield = false;
     }
@@ -662,7 +662,7 @@ void start_sequence(){
   tft.setTextSize(3);
   tft.drawString("START!", x, y);
   control_LED(0, 0, 0);
-  startBuzz(500);
+  startBuzz(250);
 
   clear_screen();
   tft.setTextColor(TFT_WHITE); 
@@ -685,7 +685,7 @@ void end_sequence(){
   int16_t y = 57;
   tft.setTextColor(TFT_BLACK, TFT_RED);
   tft.drawString("GAME OVER!", x, y);
-  startBuzz(500);
+  startBuzz(250);
   print_score_screen();
 }
 
