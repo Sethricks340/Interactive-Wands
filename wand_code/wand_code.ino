@@ -478,8 +478,8 @@ void doSpell(Spell spell){
 
   startBuzz(500);
 
-  if (spell.effects[0]) handle_self_shield(spell.effects[0]);
-  if (spell.effects[1]) handle_self_stun(spell.effects[1]);
+  if (spell.effects[0] && !shield) handle_self_shield(spell.effects[0]);
+  if (spell.effects[1] && !stunned) handle_self_stun(spell.effects[1]);
   if (spell.effects[2]) handle_self_points(spell.effects[2]);
   
   if (spell.effects[3] == 0 && spell.effects[4] == 0 && spell.effects[5] == 0) return; // If there are no effects on others
