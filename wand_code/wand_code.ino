@@ -211,14 +211,22 @@ void loop() {
 
   unsigned long now = millis();
 
-
-
-
   // --- Demo state --- //
   if (demo_mode & !game_started){
-    // Check for button hold to enter demo mode
     int buttonState = digitalRead(buttonPin);
 
+    listening = !digitalRead(buttonPin);
+
+    spell_recognizing_sequence();
+
+    // Periodic tasks
+    static unsigned long lastPeriodic = 0;
+    if (now - lastPeriodic >= 10) {  // every 10 ms
+      lastPeriodic = now;
+      check_movements();
+    }
+
+    // Check for button hold to enter demo mode
     if (buttonState == LOW) {  // button is pressed
       if (!buttonHeld) {       // first time detecting press
         demoModeStart = millis();
@@ -484,17 +492,28 @@ void spell_recognizing_sequence(){
   }
   if (SpellListCount && !listening){ // Movement detected during button press, and button is now released
     Spell spell = checkThroughSpells();
-    if (spell.name != "None"){
-      doSpell(spell);
-      // LED timer here
-      LED_start_time = millis();
-      LED_on = true;
+    if (!demo_mode){
+      if (spell.name != "None"){
+        doSpell(spell);
+        // LED timer here
+        LED_start_time = millis();
+        LED_on = true;
+      }
+      else{
+        draw_message_box_first_row("Spell not recognized");
+        startBuzz(250);
+      }
+      clearSpellChecker();
     }
     else{
-      draw_message_box_first_row("Spell not recognized");
-      startBuzz(250);
+      if (spell.name != "None"){
+        draw_message_box_first_row(spell.name, TFT_GREEN);
+      }
+      else{
+        draw_message_box_first_row("Spell not recognized");
+      }
+      clearSpellChecker();
     }
-    clearSpellChecker();
   }
 }
 
