@@ -5,7 +5,7 @@
 // * Press button, do spell, release button
 
 // TODO: 
-
+  // Make DEMO mode
 
 #include <Wire.h>
 #include <math.h>
@@ -543,7 +543,7 @@ void check_timers() {
     } else {
       clear_shield_area();
       if (shield){
-        draw_message_box_first_row("Shield disabled!"); //TODO: this isn't working?
+        draw_message_box_first_row("Shield disabled!");
         startBuzz(250);
       }
       shield = false;
