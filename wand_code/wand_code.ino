@@ -75,6 +75,12 @@ volatile bool listening = false; // If the button is pressed
 volatile long Points = 0; // Total Points in this game
 const int buttonPin = 33;
 
+// --- Demo Mode -- //
+bool demo_mode = false; //TODO: unused
+unsigned long demoModeStart = 0;  // 5 seconds to demo mode
+const unsigned long demoHoldTime = 5000;  // // 5 seconds to demo mode
+bool buttonHeld = false;
+
 // --- Timers --- //
 int last_sec = 0;
 int remaining_stun_time = 0;
@@ -134,12 +140,12 @@ volatile int SpellListCount = 0;
 String last_spell = "";
 
 // --- Wizards --- //
-const String self_name = "Molly Weasley";
+// const String self_name = "Molly Weasley";
 // const String self_name = "Fred Weasley";
 // const String self_name = "Hermione Granger";
 // const String self_name = "Lord Voldemort";
 // const String self_name = "Ron Weasley";
-// const String self_name = "Luna Lovegood";
+const String self_name = "Luna Lovegood";
 // const String self_name = "Harry Potter";
 
 void draw_message_box_second_row(String text, uint16_t color = TFT_WHITE);
@@ -199,13 +205,42 @@ void setup() {
 
 void loop() {
 
-  // --- Handle ESP-NOW messages immediately --- //
+  // Handle ESP-NOW messages immediately
+  // Demo mode is handled in OnDataRecv
   if (ESP_recv) in_loop_ESP_recv();
 
   unsigned long now = millis();
 
+
+
+
+  // --- Demo state --- //
+  if (demo_mode & !game_started){
+    // Check for button hold to enter demo mode
+    int buttonState = digitalRead(buttonPin);
+
+    if (buttonState == LOW) {  // button is pressed
+      if (!buttonHeld) {       // first time detecting press
+        demoModeStart = millis();
+        buttonHeld = true;
+      }
+
+      if (millis() - demoModeStart >= demoHoldTime) {
+        end_demo_sequence();
+        buttonHeld = false;  // prevent multiple triggers
+        demo_mode = false;
+      }
+
+    } else {  // button released
+      if (buttonHeld) {
+        buttonHeld = false;  // reset
+      }
+    }
+    return;
+  }
+
   // --- Pre-game waiting state --- //
-  if (!game_started) {
+  if (!game_started && !demo_mode) {
     if (now - last_waiting_update >= waiting_timer) {
       draw_random_waiting_message();
       last_waiting_update = now;
@@ -214,6 +249,27 @@ void loop() {
     if (now - last_waiting_led_update >= waiting_led_timer) {
       change_LED_waiting_color();
       last_waiting_led_update = now;
+    }
+
+    // Check for button hold to enter demo mode
+    int buttonState = digitalRead(buttonPin);
+
+    if (buttonState == LOW) {  // button is pressed
+      if (!buttonHeld) {       // first time detecting press
+        demoModeStart = millis();
+        buttonHeld = true;
+      }
+
+      if (millis() - demoModeStart >= demoHoldTime) {
+        start_demo_sequence();
+        buttonHeld = false;  // prevent multiple triggers
+        demo_mode = true;
+      }
+
+    } else {  // button released
+      if (buttonHeld) {
+        buttonHeld = false;  // reset
+      }
     }
 
     return;
@@ -243,7 +299,9 @@ void loop() {
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
-  if (ESP_recv) return; // Return if we haven't dealt with the last incoming message yet. Ensures one message at a time. 
+  // Return if we haven't dealt with the last incoming message yet. Ensures one message at a time. 
+  // Also return if we are in demo mode.
+  if (ESP_recv || demo_mode) return;
 
   // If you want the MAC address:
   const uint8_t *mac = info->src_addr;   // <- new way to get sender MAC
@@ -258,7 +316,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 
 void in_loop_ESP_recv(){
   // If receiving a message from the base station for the first time
-  if (ESP_message.startsWith("base:") && !game_started) {
+  if (ESP_message.startsWith("base:") && !game_started && !demo_mode) { // Don't receive any spells or start game commands till out of demo mode
     game_started = true;
     start_sequence();
     ESP_recv = false;
@@ -589,6 +647,18 @@ void updateBuzz() {
   }
 }
 
+void buzzVibrator(int duration, int times){
+  for (int i = 0; i < times; i++) {
+    // Turn motor ON
+    digitalWrite(motorPin, HIGH);
+    delay(duration);  // keep on for 1 second
+
+    // Turn motor OFF
+    digitalWrite(motorPin, LOW);
+    delay(duration);  // keep off for 1 second
+  }
+}
+
 void handle_self_shield(int time){
   draw_shield(); 
   shield = true;
@@ -664,7 +734,7 @@ void start_sequence(){
   tft.setTextSize(3);
   tft.drawString("START!", x, y);
   control_LED(0, 0, 0);
-  startBuzz(250);
+  buzzVibrator(250, 2);
 
   clear_screen();
   tft.setTextColor(TFT_WHITE); 
@@ -687,8 +757,39 @@ void end_sequence(){
   int16_t y = 57;
   tft.setTextColor(TFT_BLACK, TFT_RED);
   tft.drawString("GAME OVER!", x, y);
-  startBuzz(250);
+  buzzVibrator(250, 2);
   print_score_screen();
+}
+
+void start_demo_sequence(){
+  // Do this to start demo mode
+  tft.fillScreen(TFT_BLUE);
+  int16_t x = (tft.width() - tft.textWidth("DEMO MODE")) / 2;
+  int16_t y = 57;
+  tft.setTextColor(TFT_WHITE, TFT_BLUE);
+  tft.setTextSize(3);
+  tft.drawString("DEMO MODE", x, y);
+  buzzVibrator(250, 2);
+
+  clear_screen();
+  tft.setTextColor(TFT_WHITE); 
+  tft.setTextSize(2);
+  draw_name(self_name);
+}
+
+void end_demo_sequence(){
+  // Do this to end demo mode
+  tft.fillScreen(TFT_BLUE);
+  int16_t x = (tft.width() - tft.textWidth("END DEMO")) / 2;
+  int16_t y = 57;
+  tft.setTextColor(TFT_WHITE, TFT_BLUE);
+  tft.setTextSize(3);
+  tft.drawString("END DEMO", x, y);
+  buzzVibrator(250, 2);
+
+  clear_screen();
+  tft.setTextColor(TFT_WHITE); 
+  tft.setTextSize(2);
 }
 
 void print_score_screen(){
