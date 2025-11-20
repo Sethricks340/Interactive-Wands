@@ -41,6 +41,8 @@ volatile bool PB = false;   // Pitch Back
 volatile bool YR = false;   // Yaw Right
 volatile bool YL = false;   // Yaw Left
 const int movement_threshold = 800;
+bool readRegisters(uint8_t reg, uint8_t count, uint8_t *dest, unsigned long timeout_ms = 5);
+int16_t toInt16(uint8_t hi, uint8_t lo);
 
 // --- Non-blocking vibrator state --- //
 int motorPin = 14;
@@ -395,7 +397,7 @@ void writeRegister(uint8_t reg, uint8_t val) {
   Wire.endTransmission();
 }
 
-bool readRegisters(uint8_t reg, uint8_t count, uint8_t *dest, unsigned long timeout_ms = 5) {
+bool readRegisters(uint8_t reg, uint8_t count, uint8_t *dest, unsigned long timeout_ms) {
     Wire.beginTransmission(MPU_ADDR);
     Wire.write(reg);
     if (Wire.endTransmission(false) != 0) return false;
