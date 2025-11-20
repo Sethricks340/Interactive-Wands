@@ -308,7 +308,10 @@ void check_movements(){
   // Create a buffer to hold 14 bytes from the MPU6500:
   uint8_t buf[14];
   // Read 14 sequential registers starting at ACCEL_XOUT_H (0x3B)
-  if (!readRegisters(ACCEL_XOUT_H, 14, buf)) return;
+  if (!readRegisters(ACCEL_XOUT_H, 14, buf)) {
+      Serial.println("MPU read failed!");
+      return;
+  }
 
   // Raw gyro
   float gx = (toInt16(buf[8], buf[9])) / GYRO_LSB_PER_DPS;
@@ -392,15 +395,20 @@ void writeRegister(uint8_t reg, uint8_t val) {
   Wire.endTransmission();
 }
 
-bool readRegisters(uint8_t reg, uint8_t count, uint8_t *dest) {
-  Wire.beginTransmission(MPU_ADDR);
-  Wire.write(reg);
-  if (Wire.endTransmission(false) != 0) return false;
-  Wire.requestFrom(MPU_ADDR, count);
-  for (uint8_t i = 0; i < count && Wire.available(); i++) {
-    dest[i] = Wire.read();
-  }
-  return true;
+bool readRegisters(uint8_t reg, uint8_t count, uint8_t *dest, unsigned long timeout_ms = 5) {
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(reg);
+    if (Wire.endTransmission(false) != 0) return false;
+
+    unsigned long start = millis();
+    Wire.requestFrom(MPU_ADDR, count);
+    for (uint8_t i = 0; i < count; i++) {
+        while (!Wire.available()) {
+            if (millis() - start >= timeout_ms) return false; // Timeout reached
+        }
+        dest[i] = Wire.read();
+    }
+    return true;
 }
 
 int16_t toInt16(uint8_t hi, uint8_t lo) {
