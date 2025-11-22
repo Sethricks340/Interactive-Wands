@@ -322,37 +322,35 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   ESP_recv = true;
 }
 
-void in_loop_ESP_recv(){
-  // If receiving a message from the base station for the first time
-  if (ESP_message.startsWith("base:") && !game_started && !demo_mode) { // Don't receive any spells or start game commands till out of demo mode
-    game_started = true;
-    start_sequence();
-    ESP_recv = false;
-    ESP_message = "";
-    return;
-  }
-  if (!game_started) return;
+void in_loop_ESP_recv() {
+    noInterrupts();              // Disable interrupts for entire processing
 
-  // Spell has no effect if your shield is on
-  if (shield) {
-      ESP_recv = false;   // Clear the message
-      ESP_message = "";
-      return;
-  }
-
-  for (int i = 0; i < NUM_SPELLS; i++) {
-    if (strcmp(spells[i].name, ESP_message.c_str()) == 0) {
-      draw_message_box_first_row(ESP_message, TFT_RED); 
-      startBuzz(250);
-      doHitSpell(spells[i]);
-      ESP_recv = false;
-      ESP_message = "";
+    if (!ESP_recv) {             // Nothing new to process
+      interrupts();
       return;
     }
-  }
 
-  ESP_recv = false;
-  ESP_message = "";
+    String localMessage = ESP_message;  // Copy the shared variable
+    ESP_message = "";                    // Clear shared string
+
+    // Process the message
+    if (localMessage.startsWith("base:") && !game_started && !demo_mode) {
+      game_started = true;
+      start_sequence();
+    } 
+    else if (game_started && !shield) {
+      for (int i = 0; i < NUM_SPELLS; i++) {
+        if (strcmp(spells[i].name, localMessage.c_str()) == 0) {
+          draw_message_box_first_row(localMessage, TFT_RED); 
+          startBuzz(250);
+          doHitSpell(spells[i]);
+          break;
+        }
+      }
+    }
+
+    ESP_recv = false;   // Only clear at the very end
+    interrupts();       // Re-enable interrupts
 }
 
 void ESPNOWSendData(String sending){
