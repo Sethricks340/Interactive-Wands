@@ -307,6 +307,7 @@ void loop() {
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
+  noInterrupts(); 
   // Return if we haven't dealt with the last incoming message yet. Ensures one message at a time. 
   // Also return if we are in demo mode.
   if (ESP_recv || demo_mode) return;
@@ -319,7 +320,13 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   message[len] = '\0'; // null terminate
 
   ESP_message = String(message);
+  if (ESP_message.startsWith("base:") && game_started){
+    ESP_message = "";
+    interrupts();
+    return;
+  }
   ESP_recv = true;
+  interrupts();
 }
 
 void in_loop_ESP_recv() {
