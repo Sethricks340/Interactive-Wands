@@ -323,15 +323,16 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
 }
 
 void in_loop_ESP_recv() {
-    noInterrupts();              // Disable interrupts for entire processing
-
     if (!ESP_recv) {             // Nothing new to process
-      interrupts();
       return;
     }
 
-    String localMessage = ESP_message;  // Copy the shared variable
-    ESP_message = "";                    // Clear shared string
+    String localMessage;
+    noInterrupts();              // Disable interrupts briefly
+    localMessage = ESP_message;  // Copy the shared variable
+    ESP_message = "";            // Clear shared string
+    ESP_recv = false;            // Only clear at the very end
+    interrupts();                // Re-enable interrupts
 
     // Process the message
     if (localMessage.startsWith("base:") && !game_started && !demo_mode) {
@@ -348,10 +349,8 @@ void in_loop_ESP_recv() {
         }
       }
     }
-
-    ESP_recv = false;   // Only clear at the very end
-    interrupts();       // Re-enable interrupts
 }
+
 
 void ESPNOWSendData(String sending){
   sending.trim();
