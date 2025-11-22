@@ -336,7 +336,7 @@ void in_loop_ESP_recv() {
     // Process the message
     if (localMessage.startsWith("base:") && !game_started && !demo_mode) {
       game_started = true;
-      start_sequence();
+      start_sequence(localMessage);
     } 
     else if (game_started && !shield) {
       for (int i = 0; i < NUM_SPELLS; i++) {
@@ -742,7 +742,7 @@ void clear_screen(){
   tft.fillScreen(TFT_BLACK); // fills the entire screen with black
 }
 
-void start_sequence(){
+void start_sequence(String startMessage){
   // Do this all the first time to start the game
   tft.fillScreen(TFT_GREEN);
   int16_t x = (tft.width() - tft.textWidth("START!")) / 2;
@@ -757,7 +757,7 @@ void start_sequence(){
   tft.setTextColor(TFT_WHITE); 
   tft.setTextSize(2);
   // Message in form base:number
-  String after = String(ESP_message).substring(5);
+  String after = String(startMessage).substring(5);
   remaining_game_time = after.toInt();
   remaining_game_time--; // Compensation for buzz vibrator blocking for one second
   draw_heart_icon();
