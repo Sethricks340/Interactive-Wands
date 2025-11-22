@@ -307,7 +307,6 @@ void loop() {
 
 // callback function that will be executed when data is received
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len){
-  noInterrupts(); 
   // Return if we haven't dealt with the last incoming message yet. Ensures one message at a time. 
   // Also return if we are in demo mode.
   if (ESP_recv || demo_mode) return;
@@ -320,13 +319,7 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   message[len] = '\0'; // null terminate
 
   ESP_message = String(message);
-  if (ESP_message.startsWith("base:") && game_started){
-    ESP_message = "";
-    interrupts();
-    return;
-  }
   ESP_recv = true;
-  interrupts();
 }
 
 void in_loop_ESP_recv() {
@@ -343,7 +336,7 @@ void in_loop_ESP_recv() {
     // Process the message
     if (localMessage.startsWith("base:") && !game_started && !demo_mode) {
       game_started = true;
-      start_sequence(localMessage);
+      start_sequence();
     } 
     else if (game_started && !shield) {
       for (int i = 0; i < NUM_SPELLS; i++) {
@@ -749,7 +742,7 @@ void clear_screen(){
   tft.fillScreen(TFT_BLACK); // fills the entire screen with black
 }
 
-void start_sequence(String startMessage){
+void start_sequence(){
   // Do this all the first time to start the game
   tft.fillScreen(TFT_GREEN);
   int16_t x = (tft.width() - tft.textWidth("START!")) / 2;
@@ -764,7 +757,7 @@ void start_sequence(String startMessage){
   tft.setTextColor(TFT_WHITE); 
   tft.setTextSize(2);
   // Message in form base:number
-  String after = String(startMessage).substring(5);
+  String after = String(ESP_message).substring(5);
   remaining_game_time = after.toInt();
   remaining_game_time--; // Compensation for buzz vibrator blocking for one second
   draw_heart_icon();
