@@ -50,6 +50,7 @@ bool buzzing = false;
 unsigned long buzz_start = 0;
 int buzz_duration = 0;
 bool buzz_on = false;
+bool NPN = true; 
 
 // --- LED --- //
 #define RED 25
@@ -171,7 +172,7 @@ void setup() {
   digitalWrite(BLUE, LOW);
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(motorPin, OUTPUT);
-  digitalWrite(motorPin, LOW);
+  motorOff();
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
@@ -639,14 +640,14 @@ void updateBuzz() {
 
   if (!buzz_on) {
     // Motor is OFF, turn it ON
-    digitalWrite(motorPin, HIGH);
+    motorOn();
     buzz_on = true;
     buzz_start = now;
   }
   else {
     // Motor is ON, check if time to turn off
     if (now - buzz_start >= buzz_duration) {
-      digitalWrite(motorPin, LOW);
+      motorOff();
       buzz_on = false;
       buzz_start = now;
       buzzing = false; // Done buzzing
@@ -654,14 +655,24 @@ void updateBuzz() {
   }
 }
 
+void motorOn(){
+  if (NPN) digitalWrite(motorPin, HIGH);
+  else digitalWrite(motorPin, LOW);
+}
+
+void motorOff(){
+  if (NPN) digitalWrite(motorPin, LOW);
+  else digitalWrite(motorPin, HIGH);
+}
+
 void buzzVibrator(int duration, int times){
   for (int i = 0; i < times; i++) {
     // Turn motor ON
-    digitalWrite(motorPin, HIGH);
+    motorOn();
     delay(duration);  // keep on for 1 second
 
     // Turn motor OFF
-    digitalWrite(motorPin, LOW);
+    motorOff();
     delay(duration);  // keep off for 1 second
   }
 }
