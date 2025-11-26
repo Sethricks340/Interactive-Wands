@@ -55,9 +55,6 @@ bool buzz_on = false;
 #define RED 25
 #define GREEN 26
 #define BLUE 27
-int LED_on = false;
-int LED_start_time = 3;
-int LED_timeout = 3000; // 3 seconds (3000ms)
 struct WaitingLED { int r; int g; int b;};
 WaitingLED waitingLights[] = { {255, 255, 255}, {0, 255, 255}, {0, 0, 255}, {255, 0, 255}, {255, 0, 0}, {255, 255, 0}, {0, 255, 0} };
 const int NUM_WAITING_LIGHTS = sizeof(waitingLights) / sizeof(waitingLights[0]);
@@ -288,10 +285,6 @@ void loop() {
 
   spell_recognizing_sequence();
 
-  // Timeout for LED
-  if (now - LED_start_time > LED_timeout)
-    control_LED(0, 0, 0);
-
   // Periodic tasks
   static unsigned long lastPeriodic = 0;
   if (now - lastPeriodic >= 10) {  // every 10 ms
@@ -345,6 +338,7 @@ void in_loop_ESP_recv() {
           draw_message_box_first_row(localMessage, TFT_RED); 
           startBuzz(250);
           doHitSpell(spells[i]);
+          control_LED(0, 0, 0);
           break;
         }
       }
@@ -492,9 +486,6 @@ void spell_recognizing_sequence(){
     if (!demo_mode){
       if (spell.name != "None"){
         doSpell(spell);
-        // LED timer here
-        LED_start_time = millis();
-        LED_on = true;
       }
       else{
         draw_message_box_first_row("Spell not recognized");
