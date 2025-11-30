@@ -4,9 +4,6 @@
 // * Works best with quick flicks
 // * Press button, do spell, release button
 
-// TODO: 
-  // Make DEMO mode
-
 #include <Wire.h>
 #include <math.h>
 #include <esp_now.h>
@@ -74,7 +71,7 @@ volatile long Points = 0; // Total Points in this game
 const int buttonPin = 33;
 
 // --- Demo Mode -- //
-bool demo_mode = false; //TODO: unused
+bool demo_mode = false;
 unsigned long demoModeStart = 0;  // 5 seconds to demo mode
 const unsigned long demoHoldTime = 5000;  // // 5 seconds to demo mode
 bool buttonHeld = false;
